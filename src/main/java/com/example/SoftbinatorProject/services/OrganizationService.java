@@ -50,6 +50,7 @@ public class OrganizationService {
     }
 
     public OrganizationInfoDto getOrganization(Long id) {
+        //TODO: Organization does not exist check
         Organization organization = organizationRepository.getById(id);
 
         return OrganizationInfoDto.builder()
@@ -74,9 +75,25 @@ public class OrganizationService {
         return organizationInfoDtos;
     }
 
-    /*public OrganizationInfoDto updateOrganization(OrganizationInfoDto organizationInfoDto, Long id, Long uid) {
+    public OrganizationInfoDto updateOrganization(OrganizationInfoDto organizationInfoDto, Long id, Long uid, Set<String> roles) {
+        //TODO: Organization does not exist check
+        Organization organization = organizationRepository.getById(id);
 
-    }*/
+        if(organization.getUser().getId().equals(uid) && roles.contains("ROLE_ORG_ADMIN") || roles.contains("ROLE_ADMIN")) {
+            //TODO: check for null fields when updating
+            organization.setName(organizationInfoDto.getName());
+            organization.setDescription(organizationInfoDto.getDescription());
+            organizationRepository.save(organization);
+
+            return OrganizationInfoDto.builder()
+                    .name(organization.getName())
+                    .description(organization.getDescription())
+                    .organizationOwner(organization.getUser().getUsername())
+                    .build();
+        }
+
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
+    }
 
     public void deleteOrganization(Long id, Long uid, Set<String> roles) {
         //TODO: Organization does not exist check
@@ -103,6 +120,8 @@ public class OrganizationService {
                 keycloakAdminService.removeRole("ROLE_ORG_ADMIN", uid);
             }
         }
+
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
 
     }
     public List<ModeratorInfoDto> getModeratorList(Long id, Long uid, Set<String> roles) {

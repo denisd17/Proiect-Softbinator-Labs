@@ -39,6 +39,11 @@ public class OrganizationController {
         return new ResponseEntity<>(organizationService.getOrganizations(), HttpStatus.OK);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateOrganization(@PathVariable Long id, @RequestBody OrganizationInfoDto organizationInfoDto, Authentication authentication) {
+        return new ResponseEntity<>(organizationService.updateOrganization(organizationInfoDto, id, Long.parseLong(KeycloakHelper.getUser(authentication)), KeycloakHelper.getUserRoles(authentication)), HttpStatus.OK);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrganization(@PathVariable Long id, Authentication authentication) {
         organizationService.deleteOrganization(id, Long.parseLong(KeycloakHelper.getUser(authentication)), KeycloakHelper.getUserRoles(authentication));
