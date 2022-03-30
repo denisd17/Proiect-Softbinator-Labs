@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.Response;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.keycloak.admin.client.CreatedResponseUtil.getCreatedId;
 
@@ -87,6 +89,22 @@ public class KeycloakAdminService {
         userRepresentation.setCredentials(Collections.singletonList(newCredential));
 
         realm.users().get(userRepresentation.getId()).update(userRepresentation);
+    }
+
+    public void addRole(String roleName, Long uid) {
+        String keycloakUid = realm.users().search(uid.toString()).get(0).getId();
+        UserResource userResource = realm.users().get(keycloakUid);
+        RoleRepresentation roleToAdd = realm.roles().get(roleName).toRepresentation();
+
+        userResource.roles().realmLevel().add(Collections.singletonList(roleToAdd));
+    }
+
+    public void removeRole(String roleName, Long uid) {
+        String keycloakUid = realm.users().search(uid.toString()).get(0).getId();
+        UserResource userResource = realm.users().get(keycloakUid);
+        RoleRepresentation roleToRemove = realm.roles().get(roleName).toRepresentation();
+
+        userResource.roles().realmLevel().remove(Collections.singletonList(roleToRemove));
     }
 
 }

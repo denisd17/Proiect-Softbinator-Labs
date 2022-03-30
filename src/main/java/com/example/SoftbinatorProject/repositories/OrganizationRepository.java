@@ -1,13 +1,12 @@
 package com.example.SoftbinatorProject.repositories;
 
-import com.example.SoftbinatorProject.models.User;
+import com.example.SoftbinatorProject.models.Organization;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByEmail(String email);
-    Optional<User> findById(Long id);
+public interface OrganizationRepository extends JpaRepository<Organization, Long> {
+    Optional<Organization> findById(Long id);
 }

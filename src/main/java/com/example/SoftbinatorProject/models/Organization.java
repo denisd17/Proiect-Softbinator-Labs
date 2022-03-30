@@ -1,7 +1,6 @@
 package com.example.SoftbinatorProject.models;
 
 import lombok.*;
-import org.aspectj.weaver.ast.Or;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -14,34 +13,23 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "organizations")
+public class Organization {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private String firstName;
+    private String name;
 
-    private String lastName;
+    private String description;
 
-    private String email;
+    @ManyToOne
+    @JoinColumn(name="user_id", nullable=false)
+    private User user;
 
-    private String username;
-
-    private Double moneyBalance;
-
-    private String role;
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
-    private List<Organization> organizations;
-
-    @ManyToMany
-    @JoinTable(
-            name = "organization_moderators",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "organization_id"))
-    private List<Organization> moderatedOrganizations;
+    @ManyToMany(mappedBy = "moderatedOrganizations")
+    private List<User> moderators;
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
@@ -52,5 +40,4 @@ public class User {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "modify_date")
     private Date modifyDate;
-
 }
