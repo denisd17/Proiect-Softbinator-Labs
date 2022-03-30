@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import static com.example.SoftbinatorProject.utils.HttpStatusUtility.successResponse;
 
 @RestController
@@ -25,6 +27,16 @@ public class OrganizationController {
     @PostMapping("/create-organization")
     public ResponseEntity<?> createOrganization(@RequestBody OrganizationDto organizationDto, Authentication authentication) {
         return new ResponseEntity<>(organizationService.createOrganization(organizationDto, Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOrganization(@PathVariable Long id) {
+        return new ResponseEntity<>(organizationService.getOrganization(id), HttpStatus.OK);
+    }
+
+    @GetMapping("")
+    public ResponseEntity<List<OrganizationInfoDto>> getOrganizations() {
+        return new ResponseEntity<>(organizationService.getOrganizations(), HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")

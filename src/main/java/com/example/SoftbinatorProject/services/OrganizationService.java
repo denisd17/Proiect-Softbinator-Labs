@@ -7,6 +7,7 @@ import com.example.SoftbinatorProject.models.Organization;
 import com.example.SoftbinatorProject.models.User;
 import com.example.SoftbinatorProject.repositories.OrganizationRepository;
 import com.example.SoftbinatorProject.repositories.UserRepository;
+import org.aspectj.weaver.ast.Or;
 import org.bouncycastle.math.raw.Mod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -48,18 +49,35 @@ public class OrganizationService {
                 .build();
     }
 
-    /*public OrganizationInfoDto getOrganization(Long id) {
+    public OrganizationInfoDto getOrganization(Long id) {
+        Organization organization = organizationRepository.getById(id);
 
+        return OrganizationInfoDto.builder()
+                .name(organization.getName())
+                .description(organization.getDescription())
+                .organizationOwner(organization.getUser().getUsername())
+                .build();
     }
 
     public List<OrganizationInfoDto> getOrganizations() {
+        List<Organization> organizations = organizationRepository.findAll();
+        List<OrganizationInfoDto> organizationInfoDtos = new ArrayList<>();
 
+        for(Organization o : organizations) {
+            organizationInfoDtos.add(OrganizationInfoDto.builder()
+                    .name(o.getName())
+                    .description(o.getDescription())
+                    .organizationOwner(o.getUser().getUsername())
+                    .build());
+        }
+
+        return organizationInfoDtos;
     }
 
-    public OrganizationInfoDto updateOrganization(OrganizationInfoDto organizationInfoDto, Long id, Long uid) {
+    /*public OrganizationInfoDto updateOrganization(OrganizationInfoDto organizationInfoDto, Long id, Long uid) {
 
-    }
-*/
+    }*/
+
     public void deleteOrganization(Long id, Long uid, Set<String> roles) {
         //TODO: Organization does not exist check
         Organization organization = organizationRepository.getById(id);
