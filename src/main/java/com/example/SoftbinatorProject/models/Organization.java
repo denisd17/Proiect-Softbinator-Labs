@@ -31,6 +31,9 @@ public class Organization {
     @ManyToMany(mappedBy = "moderatedOrganizations")
     private List<User> moderators;
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization")
+    private List<Project> projects;
+
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "create_date")
