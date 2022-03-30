@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 public class KeycloakUtility {
 
     // The Keycloak Login URL
-    static String baseUrl;
+    private static String baseUrl;
 
     @Value("${keycloak.auth-server-url}")
     public void setBaseUrl(String nonStaticBaseUrl){

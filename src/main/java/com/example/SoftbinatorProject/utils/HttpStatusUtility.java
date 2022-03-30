@@ -41,7 +41,7 @@ public class HttpStatusUtility extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(obj, HttpStatus.CREATED);
     }
 
-    @ExceptionHandler(UndeclaredThrowableException.class)
+    /*@ExceptionHandler(UndeclaredThrowableException.class)
     public ResponseEntity<Map<String, String>> handleHttpStatusException(UndeclaredThrowableException e) {
         Throwable ex = e.getCause();
 
@@ -59,6 +59,6 @@ public class HttpStatusUtility extends ResponseEntityExceptionHandler {
         Map<String, String> map = new HashMap<>();
         map.put("message", e.getMessage());
         return new ResponseEntity<>(map, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    }*/
 
 }

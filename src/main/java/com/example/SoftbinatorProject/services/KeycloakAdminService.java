@@ -1,7 +1,9 @@
 package com.example.SoftbinatorProject.services;
 
 
+import com.example.SoftbinatorProject.config.AuthClient;
 import com.example.SoftbinatorProject.dtos.ChangePasswordDto;
+import com.example.SoftbinatorProject.repositories.UserRepository;
 import com.example.SoftbinatorProject.utils.KeycloakUtility;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -25,12 +27,19 @@ public class KeycloakAdminService {
     @Value("${keycloak.realm}")
     private String keycloakRealm;
 
+    @Value("${keycloak.resource}")
+    private String keycloakClient;
+
     private final Keycloak keycloak;
+    private final AuthClient authClient;
+    private final UserRepository userRepository;
     private RealmResource realm;
 
     @Autowired
-    public KeycloakAdminService(Keycloak keycloak) {
+    public KeycloakAdminService(Keycloak keycloak, AuthClient authClient, UserRepository userRepository) {
         this.keycloak = keycloak;
+        this.authClient = authClient;
+        this.userRepository = userRepository;
     }
 
     @PostConstruct
@@ -63,19 +72,13 @@ public class KeycloakAdminService {
     }
 
     public void deleteUser(Long userId) {
-        Keycloak adminClient = KeycloakUtility.getAdminClient();
-        RealmResource realmResource = adminClient.realm(keycloakRealm);
+        UserRepresentation userRepresentation = realm.users().search(userId.toString()).get(0);
+        realm.users().delete(userRepresentation.getId());
 
-        UserRepresentation userRepresentation = realmResource.users().search(userId.toString()).get(0);
-
-        realmResource.users().delete(userRepresentation.getId());
     }
 
     public void changePassword(ChangePasswordDto changePasswordDto) {
-        Keycloak adminClient = KeycloakUtility.getAdminClient();
-        RealmResource realmResource = adminClient.realm(keycloakRealm);
-
-        UserRepresentation userRepresentation = realmResource.users().search(changePasswordDto.getUserId().toString()).get(0);
+        UserRepresentation userRepresentation = realm.users().search(changePasswordDto.getUserId().toString()).get(0);
 
         CredentialRepresentation newCredential = new CredentialRepresentation();
         newCredential.setType(CredentialRepresentation.PASSWORD);
@@ -83,7 +86,7 @@ public class KeycloakAdminService {
         newCredential.setTemporary(false);
         userRepresentation.setCredentials(Collections.singletonList(newCredential));
 
-        realmResource.users().get(userRepresentation.getId()).update(userRepresentation);
+        realm.users().get(userRepresentation.getId()).update(userRepresentation);
     }
 
 }
