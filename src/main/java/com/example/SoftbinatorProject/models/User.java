@@ -43,6 +43,9 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "organization_id"))
     private List<Organization> moderatedOrganizations;
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    private List<Donation> donations;
+
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "create_date")
