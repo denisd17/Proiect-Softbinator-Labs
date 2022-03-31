@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 public class FundraiserInfoDto extends ProjectInfoDto{
-    private Long goal;
+    private Double goal;
 
-    private Long moneyRaised;
+    private Double moneyRaised;
 }

@@ -9,10 +9,12 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @Data
 @SuperBuilder
-public class EventInfoDto extends ProjectInfoDto{
+public class UpdateProjectDto {
+    private String name;
+
+    private String description;
+
     private Double ticketPrice;
 
     private Integer ticketAmount;
-
-    private Integer ticketsSold;
 }
