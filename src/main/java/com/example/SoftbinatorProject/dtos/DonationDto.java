@@ -19,4 +19,6 @@ public class DonationDto {
     private String projectName;
 
     private String username;
+
+    private String receiptUrl;
 }

@@ -4,12 +4,14 @@ import com.example.SoftbinatorProject.dtos.*;
 import com.example.SoftbinatorProject.services.DonationService;
 import com.example.SoftbinatorProject.services.ProjectService;
 import com.example.SoftbinatorProject.utils.KeycloakHelper;
+import com.itextpdf.text.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 
 import static com.example.SoftbinatorProject.utils.HttpStatusUtility.successResponse;
@@ -63,7 +65,7 @@ public class ProjectController {
     }
 
     @PostMapping("/{projectId}/donate")
-    public ResponseEntity<?> donateToFundariser(@PathVariable Long id, @PathVariable Long projectId, @RequestBody DonationDto donationDto, Authentication authentication) {
+    public ResponseEntity<?> donateToFundariser(@PathVariable Long id, @PathVariable Long projectId, @RequestBody DonationDto donationDto, Authentication authentication) throws FileNotFoundException, DocumentException {
         return new ResponseEntity<>(donationService.donate(id, projectId, Long.parseLong(KeycloakHelper.getUser(authentication)), donationDto), HttpStatus.OK);
     }
 }

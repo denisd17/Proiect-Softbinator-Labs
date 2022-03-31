@@ -23,6 +23,8 @@ public class Donation {
 
     private Double amount;
 
+    private String receiptUrl;
+
     @ManyToOne
     @JoinColumn(name="user_id", nullable=false)
     private User user;
