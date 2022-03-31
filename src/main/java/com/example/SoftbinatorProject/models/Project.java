@@ -1,21 +1,27 @@
 package com.example.SoftbinatorProject.models;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.util.Date;
-import java.util.List;
 
-@Builder
+@SuperBuilder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "organizations")
-public class Organization {
-
+@DiscriminatorColumn(
+        name="type",
+        discriminatorType=DiscriminatorType.STRING
+)
+@Table(name = "projects")
+public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -25,14 +31,8 @@ public class Organization {
     private String description;
 
     @ManyToOne
-    @JoinColumn(name="user_id", nullable=false)
-    private User user;
-
-    @ManyToMany(mappedBy = "moderatedOrganizations")
-    private List<User> moderators;
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization")
-    private List<Project> projects;
+    @JoinColumn(name="organization_id", nullable=false)
+    private Organization organization;
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
@@ -43,4 +43,9 @@ public class Organization {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "modify_date")
     private Date modifyDate;
+
+    @Transient
+    public String getDecriminatorValue() {
+        return this.getClass().getAnnotation(DiscriminatorValue.class).value();
+    }
 }

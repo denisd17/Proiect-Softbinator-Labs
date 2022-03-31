@@ -138,7 +138,7 @@ public class OrganizationService {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
     }
 
-
+    //TODO: Fix lista de moderatori corecta la adaugare / stergere
     public List<ModeratorInfoDto> addModerator(Long id, Long moderatorId, Long uid, Set<String> roles) {
         //TODO: Organization does not exist check
         Organization organization = organizationRepository.getById(id);

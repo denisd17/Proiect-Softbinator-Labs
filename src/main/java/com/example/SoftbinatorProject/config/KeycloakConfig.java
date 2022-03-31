@@ -35,7 +35,7 @@ class KeycloakConfig extends KeycloakWebSecurityConfigurerAdapter {
                 new SessionRegistryImpl());
     }
 
-
+    //TODO: Config route permissions and remove role check from controllers
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         super.configure(http);
