@@ -5,6 +5,7 @@ import com.example.SoftbinatorProject.models.*;
 import com.example.SoftbinatorProject.repositories.DonationRepository;
 import com.example.SoftbinatorProject.repositories.OrganizationRepository;
 import com.example.SoftbinatorProject.repositories.ProjectRepository;
+import com.example.SoftbinatorProject.repositories.TicketRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,12 +20,14 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final OrganizationRepository organizationRepository;
     private final DonationRepository donationRepository;
+    private final TicketRepository ticketRepository;
 
     @Autowired
-    public ProjectService(ProjectRepository projectRepository, OrganizationRepository organizationRepository, DonationRepository donationRepository) {
+    public ProjectService(ProjectRepository projectRepository, OrganizationRepository organizationRepository, DonationRepository donationRepository, TicketRepository ticketRepository) {
         this.projectRepository = projectRepository;
         this.organizationRepository = organizationRepository;
         this.donationRepository = donationRepository;
+        this.ticketRepository = ticketRepository;
     }
 
     //TODO: Calcul goal si bilete vandute
@@ -226,7 +229,8 @@ public class ProjectService {
                         .description(event.getDescription())
                         .ticketAmount(event.getTicketAmount())
                         .ticketPrice(event.getTicketPrice())
-                        .ticketsSold(0)
+                        .ticketsSold(ticketRepository.getTicketsSold(event.getId()))
+                        .moneyRaised(ticketRepository.getRaisedAmount(event.getId()))
                         .build();
             }
             else {

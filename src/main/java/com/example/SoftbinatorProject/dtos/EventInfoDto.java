@@ -15,4 +15,6 @@ public class EventInfoDto extends ProjectInfoDto{
     private Integer ticketAmount;
 
     private Integer ticketsSold;
+
+    private Double moneyRaised;
 }

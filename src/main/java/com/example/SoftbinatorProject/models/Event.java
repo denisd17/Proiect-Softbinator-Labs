@@ -6,9 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.List;
 
 @SuperBuilder
 @Data
@@ -21,5 +20,6 @@ public class Event extends Project{
 
     private Integer ticketAmount;
 
-
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "event")
+    private List<Ticket> tickets;
 }
