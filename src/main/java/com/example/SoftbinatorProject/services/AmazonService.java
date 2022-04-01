@@ -61,31 +61,32 @@ public class AmazonService {
             System.out.println("exista");
             String fileName = "test1234";
             String fileUrl = endpointUrl + "/" + bucketName + "/" + fileName;
-            uploadFileTos3bucket(fileName, file);
+            uploadFileTos3bucket("test", fileName, file);
 
             return fileUrl;
         }
 
         return null;
     }
-    public String uploadFile(String fileName, File file) {
-        String fileUrl = endpointUrl + "/" + bucketName + "/" + fileName;
-        uploadFileTos3bucket(fileName, file);
+    public String uploadFile(String folderName, String fileName, File file) {
+        String fileUrl = endpointUrl + "/"  + bucketName + "/" + folderName + "/" + fileName;
+        uploadFileTos3bucket(folderName, fileName, file);
         file.delete();
         return fileUrl;
     }
 
-    public String upload(MultipartFile multipartFile) {
+    public String upload(MultipartFile multipartFile, String folderPath) {
         String fileUrl = "";
         try {
             File file = convertMultiPartToFile(multipartFile);
             String fileName = generateFileName(multipartFile);
             fileUrl = endpointUrl + "/" + bucketName + "/" + fileName;
-            uploadFileTos3bucket(fileName, file);
+            uploadFileTos3bucket(folderPath, fileName, file);
             file.delete();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        //ATENTIE LA FILE URL SA AIBE SI FOLDER NAME
         return fileUrl;
     }
 
@@ -103,7 +104,7 @@ public class AmazonService {
     }
 
     //upload files to s3
-    private void uploadFileTos3bucket(String fileName, File file) {
-        s3client.putObject(new PutObjectRequest(bucketName, fileName, file).withCannedAcl(CannedAccessControlList.PublicRead));
+    private void uploadFileTos3bucket(String folderName, String fileName, File file) {
+        s3client.putObject(new PutObjectRequest(bucketName, folderName + "/" + fileName, file).withCannedAcl(CannedAccessControlList.PublicRead));
     }
 }

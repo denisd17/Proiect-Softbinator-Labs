@@ -17,7 +17,7 @@ import java.util.Map;
 public class ReceiptUtility {
     public static String generateReceipt(Map<String, String> receiptInfo) throws FileNotFoundException, DocumentException {
         //TODO: Exceptions
-        String docName = "factura" + receiptInfo.get(ReceiptDetails.DATA.name()) + "_" + receiptInfo.get(ReceiptDetails.NUME.name()) + ".pdf";
+        String docName = "factura_" + receiptInfo.get(ReceiptDetails.NR.name()) + "_" + receiptInfo.get(ReceiptDetails.NUME.name()) + ".pdf";
         Document document = new Document();
         PdfWriter.getInstance(document, new FileOutputStream(docName));
         document.open();
@@ -30,7 +30,9 @@ public class ReceiptUtility {
         // Generare informatii factura
         font = FontFactory.getFont(FontFactory.COURIER, 16, BaseColor.BLACK);
         for(ReceiptDetails field : ReceiptDetails.values()) {
-            Paragraph paragraph = new Paragraph(field.name() + ": " + receiptInfo.get(field.name()), font);
+            Paragraph paragraph = new Paragraph(field.toString() + ": " + receiptInfo.get(field.name())
+                    .toUpperCase()
+                    .replace('_', ' '), font);
             document.add(paragraph);
         }
 
@@ -52,7 +54,7 @@ public class ReceiptUtility {
         table.addCell("");
         table.addCell("");
         //TODO: Verificat ca merge bine totalul
-        table.addCell(receiptInfo.get("TOTAL"));
+        table.addCell(new Phrase(receiptInfo.get("TOTAL"), font));
 
 
         // Adaugarea tabelului in document

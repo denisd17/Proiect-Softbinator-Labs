@@ -20,6 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +50,7 @@ public class DonationService {
         if(donationDto.getAmount() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid donation amount!");
         }
-        else if(user.getMoneyBalance() - donationDto.getAmount() <= 0) {
+        else if(user.getMoneyBalance() - donationDto.getAmount() < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not have sufficient funds!");
         }
         else if(project.getDecriminatorValue().equals("event")) {
@@ -56,6 +58,7 @@ public class DonationService {
         }
         else {
             //TODO: check if project exists
+            //TODO: save receipt url in model
             Fundraiser fundraiser = (Fundraiser) project;
             Donation donation = Donation.builder()
                     .amount(donationDto.getAmount())
@@ -63,7 +66,7 @@ public class DonationService {
                     .user(user)
                     .build();
 
-            donationRepository.save(donation);
+            Long donId = donationRepository.save(donation).getId();
 
             // Actualizare fonduri utilizator
             Double newBalance = user.getMoneyBalance() - donation.getAmount();
@@ -72,11 +75,10 @@ public class DonationService {
 
             // Generare factura donatie
             Map<String, String> receiptInfo = new HashMap<>();
-            //TODO: Numar corect
-            receiptInfo.put("NR", "1");
-            //TODO: Data corecta
-            receiptInfo.put("DATA", "DATA_CURENTA");
-            receiptInfo.put("NUME", user.getFirstName() + user.getLastName());
+            receiptInfo.put("NR", donId.toString());
+            String currentDate = new SimpleDateFormat("dd-MMM-yyyy HH:mm").format(new Date());
+            receiptInfo.put("DATA", currentDate);
+            receiptInfo.put("NUME", user.getFirstName() + "_" + user.getLastName());
             receiptInfo.put("NUME_ORGANIZATIE", fundraiser.getOrganization().getName());
             receiptInfo.put("NUME_PROIECT", fundraiser.getName());
             receiptInfo.put("NR_CRT", "1");
@@ -87,7 +89,10 @@ public class DonationService {
 
             String docName = ReceiptUtility.generateReceipt(receiptInfo);
             File file = new File(docName);
-            String receiptUrl = amazonService.uploadFile(docName, file);
+            String receiptUrl = amazonService.uploadFile("receipts",docName, file);
+
+            donation.setReceiptUrl(receiptUrl);
+            donationRepository.save(donation);
 
             return DonationDto.builder()
                     .amount(donation.getAmount())
