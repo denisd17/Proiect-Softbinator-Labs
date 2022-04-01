@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.ws.rs.BadRequestException;
@@ -24,18 +25,22 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final KeycloakAdminService keycloakAdminService;
+    private final AmazonService amazonService;
 
     @Autowired
-    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService) {
+    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService) {
         this.userRepository = userRepository;
         this.keycloakAdminService = keycloakAdminService;
+        this.amazonService = amazonService;
     }
 
     @SneakyThrows
-    public void registerUser(RegisterDto registerDto) {
+    public void registerUser(RegisterDto registerDto, MultipartFile image) {
         if (userRepository.findByEmail(registerDto.getEmail()).isPresent()) {
             throw new BadRequestException("User with email " + registerDto.getEmail() + " already exists.");
         }
+
+        String profilePicUrl = amazonService.upload("images", "profile_pic_" + registerDto.getUsername(), image);
 
         User newUser = User.builder()
                 .firstName(registerDto.getFirstName())
@@ -44,6 +49,7 @@ public class UserService {
                 .username(registerDto.getUsername())
                 .moneyBalance(0.d)
                 .role("user")
+                .profilePicUrl(profilePicUrl)
                 .build();
 
         newUser = userRepository.save(newUser);

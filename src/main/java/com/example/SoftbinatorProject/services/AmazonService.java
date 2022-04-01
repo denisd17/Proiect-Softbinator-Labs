@@ -75,13 +75,12 @@ public class AmazonService {
         return fileUrl;
     }
 
-    public String upload(MultipartFile multipartFile, String folderPath) {
+    public String upload(String folderName, String fileName, MultipartFile multipartFile) {
         String fileUrl = "";
         try {
             File file = convertMultiPartToFile(multipartFile);
-            String fileName = generateFileName(multipartFile);
-            fileUrl = endpointUrl + "/" + bucketName + "/" + fileName;
-            uploadFileTos3bucket(folderPath, fileName, file);
+            fileUrl = endpointUrl + "/" + bucketName + "/" + folderName + "/" + fileName;
+            uploadFileTos3bucket(folderName, fileName, file);
             file.delete();
         } catch (Exception e) {
             e.printStackTrace();

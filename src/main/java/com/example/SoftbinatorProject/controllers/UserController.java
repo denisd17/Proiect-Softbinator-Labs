@@ -7,9 +7,11 @@ import com.example.SoftbinatorProject.services.UserService;
 import com.example.SoftbinatorProject.utils.KeycloakHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,12 +28,15 @@ public class UserController {
         this.userService = userService;
     }
 
+    //TODO: Handle missing image
     @PostMapping("/register-user")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterDto registerDto) {
-        userService.registerUser(registerDto);
+    public ResponseEntity<?> registerUser(@RequestPart("dto") RegisterDto registerDto, @RequestPart("image") MultipartFile image) {
+        userService.registerUser(registerDto, image);
         return successResponse();
     }
 
+    //TODO: Add image in request
+    //TODO: Handle missing image
     @PostMapping("/register-admin")
     public ResponseEntity<?> registerAdmin(@RequestBody RegisterDto registerDto) {
         userService.registerAdmin(registerDto);
@@ -52,7 +57,7 @@ public class UserController {
     public ResponseEntity<List<UserInfoDto>> getUsersInfo() {
         return new ResponseEntity<>(userService.getUsers(), HttpStatus.OK);
     }
-
+    //TODO: Add image to request
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserInfoDto userInfoDto, Authentication authentication) {
         return new ResponseEntity<>(userService.updateUser(id,
@@ -61,7 +66,7 @@ public class UserController {
                 userInfoDto),
                 HttpStatus.OK);
     }
-
+    //TODO: Delete profile pic from bucket
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id, Authentication authentication) {
         userService.deleteUser(id,

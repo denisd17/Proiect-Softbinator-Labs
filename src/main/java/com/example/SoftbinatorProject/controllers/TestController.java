@@ -1,12 +1,15 @@
 package com.example.SoftbinatorProject.controllers;
 
+import com.example.SoftbinatorProject.dtos.TestDto;
+import com.example.SoftbinatorProject.services.AmazonService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.ws.rs.Produces;
 import javax.xml.transform.Transformer;
@@ -25,6 +28,12 @@ import java.nio.file.Paths;
 @RestController
 @RequestMapping("/test")
 public class TestController {
+    private final AmazonService amazonService;
+
+    @Autowired
+    public TestController(AmazonService amazonService) {
+        this.amazonService = amazonService;
+    }
 
     @GetMapping("/user")
     public String userTest(){
@@ -34,6 +43,13 @@ public class TestController {
     @GetMapping("/admin")
     public String adminTest(){
         return "ok admin";
+    }
+
+    @PostMapping(value = "/image")
+    public void imageTest(@RequestPart("dto") TestDto dto, @RequestPart("image") MultipartFile image) {
+        System.out.println(dto.getTest1());
+        System.out.println(dto.getTest2());
+        amazonService.upload("images", "testimage", image);
     }
 
     @GetMapping("/pdf")

@@ -33,6 +33,8 @@ public class User {
 
     private String role;
 
+    private String profilePicUrl;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
     private List<Organization> organizations;
 

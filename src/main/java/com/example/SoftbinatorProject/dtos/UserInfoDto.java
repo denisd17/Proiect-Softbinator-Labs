@@ -21,4 +21,6 @@ public class UserInfoDto {
     private String username;
 
     private Double moneyBalance;
+
+    private String profilePicUrl;
 }
