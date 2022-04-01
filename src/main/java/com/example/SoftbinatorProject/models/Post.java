@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,31 +11,27 @@ import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
-@SuperBuilder
+@Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@DiscriminatorColumn(
-        name="type",
-        discriminatorType=DiscriminatorType.STRING
-)
-@Table(name = "projects")
-public class Project {
+@Table(name = "posts")
+public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private String name;
+    private String title;
 
-    private String description;
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "project")
-    private List<Post> posts;
+    private String content;
 
     @ManyToOne
-    @JoinColumn(name="organization_id", nullable=false)
-    private Organization organization;
+    @JoinColumn(name="project_id", nullable=false)
+    private Project project;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "post")
+    private List<Comment> comments;
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
@@ -47,9 +42,4 @@ public class Project {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "modify_date")
     private Date modifyDate;
-
-    @Transient
-    public String getDecriminatorValue() {
-        return this.getClass().getAnnotation(DiscriminatorValue.class).value();
-    }
 }
