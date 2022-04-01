@@ -6,9 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.List;
 
 @SuperBuilder
 @Data
@@ -19,5 +18,6 @@ import javax.persistence.Table;
 public class Fundraiser extends Project{
     private Double goal;
 
-
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "fundraiser")
+    private List<Donation> donations;
 }

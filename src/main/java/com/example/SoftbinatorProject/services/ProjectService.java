@@ -2,6 +2,7 @@ package com.example.SoftbinatorProject.services;
 
 import com.example.SoftbinatorProject.dtos.*;
 import com.example.SoftbinatorProject.models.*;
+import com.example.SoftbinatorProject.repositories.DonationRepository;
 import com.example.SoftbinatorProject.repositories.OrganizationRepository;
 import com.example.SoftbinatorProject.repositories.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +18,15 @@ import java.util.Set;
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final OrganizationRepository organizationRepository;
+    private final DonationRepository donationRepository;
 
     @Autowired
-    public ProjectService(ProjectRepository projectRepository, OrganizationRepository organizationRepository) {
+    public ProjectService(ProjectRepository projectRepository, OrganizationRepository organizationRepository, DonationRepository donationRepository) {
         this.projectRepository = projectRepository;
         this.organizationRepository = organizationRepository;
+        this.donationRepository = donationRepository;
     }
+
     //TODO: Calcul goal si bilete vandute
     public ProjectInfoDto createProject(CreateProjectDto createProjectDto, Long orgId, Long uid, Set<String> roles) {
         Organization organization = organizationRepository.getById(orgId);
@@ -149,7 +153,7 @@ public class ProjectService {
                     .name(fundraiser.getName())
                     .description(fundraiser.getDescription())
                     .goal(fundraiser.getGoal())
-                    .moneyRaised(0d)
+                    .moneyRaised(donationRepository.getRaisedAmount(fundraiser.getId()))
                     .build();
         }
     }
@@ -182,7 +186,7 @@ public class ProjectService {
                         .name(fundraiser.getName())
                         .description(fundraiser.getDescription())
                         .goal(fundraiser.getGoal())
-                        .moneyRaised(0d)
+                        .moneyRaised(donationRepository.getRaisedAmount(fundraiser.getId()))
                         .build());
             }
         }
@@ -234,7 +238,7 @@ public class ProjectService {
                         .name(fundraiser.getName())
                         .description(fundraiser.getDescription())
                         .goal(fundraiser.getGoal())
-                        .moneyRaised(0d)
+                        .moneyRaised(donationRepository.getRaisedAmount(fundraiser.getId()))
                         .build();
             }
 
