@@ -3,6 +3,7 @@ package com.example.SoftbinatorProject.controllers;
 import com.example.SoftbinatorProject.dtos.*;
 import com.example.SoftbinatorProject.services.DonationService;
 import com.example.SoftbinatorProject.services.ProjectService;
+import com.example.SoftbinatorProject.services.TicketService;
 import com.example.SoftbinatorProject.utils.KeycloakHelper;
 import com.itextpdf.text.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +22,13 @@ import static com.example.SoftbinatorProject.utils.HttpStatusUtility.successResp
 public class ProjectController {
     private final ProjectService projectService;
     private final DonationService donationService;
+    private final TicketService ticketService;
 
     @Autowired
-    public ProjectController(ProjectService projectService, DonationService donationService) {
+    public ProjectController(ProjectService projectService, DonationService donationService, TicketService ticketService) {
         this.projectService = projectService;
         this.donationService = donationService;
+        this.ticketService = ticketService;
     }
 
     /*@PostMapping("/create-fundraiser")
@@ -67,5 +70,10 @@ public class ProjectController {
     @PostMapping("/{projectId}/donate")
     public ResponseEntity<?> donateToFundariser(@PathVariable Long id, @PathVariable Long projectId, @RequestBody DonationDto donationDto, Authentication authentication) throws FileNotFoundException, DocumentException {
         return new ResponseEntity<>(donationService.donate(id, projectId, Long.parseLong(KeycloakHelper.getUser(authentication)), donationDto), HttpStatus.OK);
+    }
+
+    @PostMapping("/{projectId}/purchase")
+    public ResponseEntity<?> purchaseEventTickets(@PathVariable Long id, @PathVariable Long projectId, @RequestBody TicketDto ticketDto, Authentication authentication) throws FileNotFoundException, DocumentException {
+        return new ResponseEntity<>(ticketService.purchase(id, projectId, Long.parseLong(KeycloakHelper.getUser(authentication)), ticketDto), HttpStatus.OK);
     }
 }
