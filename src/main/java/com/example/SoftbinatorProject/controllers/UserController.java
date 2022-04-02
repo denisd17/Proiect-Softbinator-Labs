@@ -35,11 +35,10 @@ public class UserController {
         return successResponse();
     }
 
-    //TODO: Add image in request
     //TODO: Handle missing image
     @PostMapping("/register-admin")
-    public ResponseEntity<?> registerAdmin(@RequestBody RegisterDto registerDto) {
-        userService.registerAdmin(registerDto);
+    public ResponseEntity<?> registerAdmin(@RequestPart("dto") RegisterDto registerDto, @RequestPart("image") MultipartFile image) {
+        userService.registerAdmin(registerDto, image);
         return successResponse();
     }
 
@@ -57,13 +56,14 @@ public class UserController {
     public ResponseEntity<List<UserInfoDto>> getUsersInfo() {
         return new ResponseEntity<>(userService.getUsers(), HttpStatus.OK);
     }
-    //TODO: Add image to request
+
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserInfoDto userInfoDto, Authentication authentication) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestPart("dto") UserInfoDto userInfoDto, @RequestPart("image") MultipartFile image, Authentication authentication) {
         return new ResponseEntity<>(userService.updateUser(id,
                 Long.parseLong(KeycloakHelper.getUser(authentication)),
                 KeycloakHelper.getUserRoles(authentication),
-                userInfoDto),
+                userInfoDto,
+                image),
                 HttpStatus.OK);
     }
     //TODO: Delete profile pic from bucket

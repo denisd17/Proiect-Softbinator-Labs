@@ -88,7 +88,14 @@ public class AmazonService {
         //ATENTIE LA FILE URL SA AIBE SI FOLDER NAME
         return fileUrl;
     }
+    public void deleteFileFroms3bucket(String folderName, String fileName) {
+        s3client.deleteObject(bucketName, folderName + "/" + fileName);
+    }
 
+    public void renameFileOns3bucket(String folderName, String fileName, String newFileName) {
+        s3client.copyObject(bucketName, folderName + "/" + fileName, bucketName, folderName + "/" + newFileName);
+        s3client.deleteObject(bucketName, folderName + "/" + fileName);
+    }
     //
     private File convertMultiPartToFile(MultipartFile file) throws IOException {
         File convFile = new File(file.getOriginalFilename());
