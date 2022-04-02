@@ -7,9 +7,11 @@ import com.example.SoftbinatorProject.services.UserService;
 import com.example.SoftbinatorProject.utils.KeycloakHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,15 +28,17 @@ public class UserController {
         this.userService = userService;
     }
 
+    //TODO: Handle missing image
     @PostMapping("/register-user")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterDto registerDto) {
-        userService.registerUser(registerDto);
+    public ResponseEntity<?> registerUser(@RequestPart("dto") RegisterDto registerDto, @RequestPart("image") MultipartFile image) {
+        userService.registerUser(registerDto, image);
         return successResponse();
     }
 
+    //TODO: Handle missing image
     @PostMapping("/register-admin")
-    public ResponseEntity<?> registerAdmin(@RequestBody RegisterDto registerDto) {
-        userService.registerAdmin(registerDto);
+    public ResponseEntity<?> registerAdmin(@RequestPart("dto") RegisterDto registerDto, @RequestPart("image") MultipartFile image) {
+        userService.registerAdmin(registerDto, image);
         return successResponse();
     }
 
@@ -54,14 +58,15 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserInfoDto userInfoDto, Authentication authentication) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestPart("dto") UserInfoDto userInfoDto, @RequestPart("image") MultipartFile image, Authentication authentication) {
         return new ResponseEntity<>(userService.updateUser(id,
                 Long.parseLong(KeycloakHelper.getUser(authentication)),
                 KeycloakHelper.getUserRoles(authentication),
-                userInfoDto),
+                userInfoDto,
+                image),
                 HttpStatus.OK);
     }
-
+    //TODO: Delete profile pic from bucket
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id, Authentication authentication) {
         userService.deleteUser(id,

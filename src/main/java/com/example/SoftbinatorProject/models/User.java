@@ -33,6 +33,8 @@ public class User {
 
     private String role;
 
+    private String profilePicUrl;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
     private List<Organization> organizations;
 
@@ -48,6 +50,9 @@ public class User {
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
     private List<Ticket> tickets;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    private List<Comment> comments;
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)

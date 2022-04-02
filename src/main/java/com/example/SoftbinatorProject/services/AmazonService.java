@@ -75,13 +75,12 @@ public class AmazonService {
         return fileUrl;
     }
 
-    public String upload(MultipartFile multipartFile, String folderPath) {
+    public String upload(String folderName, String fileName, MultipartFile multipartFile) {
         String fileUrl = "";
         try {
             File file = convertMultiPartToFile(multipartFile);
-            String fileName = generateFileName(multipartFile);
-            fileUrl = endpointUrl + "/" + bucketName + "/" + fileName;
-            uploadFileTos3bucket(folderPath, fileName, file);
+            fileUrl = endpointUrl + "/" + bucketName + "/" + folderName + "/" + fileName;
+            uploadFileTos3bucket(folderName, fileName, file);
             file.delete();
         } catch (Exception e) {
             e.printStackTrace();
@@ -89,7 +88,14 @@ public class AmazonService {
         //ATENTIE LA FILE URL SA AIBE SI FOLDER NAME
         return fileUrl;
     }
+    public void deleteFileFroms3bucket(String folderName, String fileName) {
+        s3client.deleteObject(bucketName, folderName + "/" + fileName);
+    }
 
+    public void renameFileOns3bucket(String folderName, String fileName, String newFileName) {
+        s3client.copyObject(bucketName, folderName + "/" + fileName, bucketName, folderName + "/" + newFileName);
+        s3client.deleteObject(bucketName, folderName + "/" + fileName);
+    }
     //
     private File convertMultiPartToFile(MultipartFile file) throws IOException {
         File convFile = new File(file.getOriginalFilename());

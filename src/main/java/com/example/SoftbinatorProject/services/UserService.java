@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.ws.rs.BadRequestException;
@@ -24,18 +25,22 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final KeycloakAdminService keycloakAdminService;
+    private final AmazonService amazonService;
 
     @Autowired
-    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService) {
+    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService) {
         this.userRepository = userRepository;
         this.keycloakAdminService = keycloakAdminService;
+        this.amazonService = amazonService;
     }
 
     @SneakyThrows
-    public void registerUser(RegisterDto registerDto) {
+    public void registerUser(RegisterDto registerDto, MultipartFile image) {
         if (userRepository.findByEmail(registerDto.getEmail()).isPresent()) {
             throw new BadRequestException("User with email " + registerDto.getEmail() + " already exists.");
         }
+
+        String profilePicUrl = amazonService.upload("images", "profile_pic_" + registerDto.getUsername(), image);
 
         User newUser = User.builder()
                 .firstName(registerDto.getFirstName())
@@ -44,6 +49,7 @@ public class UserService {
                 .username(registerDto.getUsername())
                 .moneyBalance(0.d)
                 .role("user")
+                .profilePicUrl(profilePicUrl)
                 .build();
 
         newUser = userRepository.save(newUser);
@@ -52,10 +58,12 @@ public class UserService {
     }
 
     @SneakyThrows
-    public void registerAdmin(RegisterDto registerDto) {
+    public void registerAdmin(RegisterDto registerDto, MultipartFile image) {
         if (userRepository.findByEmail(registerDto.getEmail()).isPresent()) {
             throw new BadRequestException("User with email " + registerDto.getEmail() + " already exists.");
         }
+
+        String profilePicUrl = amazonService.upload("images", "profile_pic_" + registerDto.getUsername(), image);
 
         User newUser = User.builder()
                 .firstName(registerDto.getFirstName())
@@ -64,6 +72,7 @@ public class UserService {
                 .username(registerDto.getUsername())
                 .moneyBalance(0.d)
                 .role("admin")
+                .profilePicUrl(profilePicUrl)
                 .build();
 
         newUser = userRepository.save(newUser);
@@ -82,6 +91,7 @@ public class UserService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .moneyBalance(user.getMoneyBalance())
+                .profilePicUrl(user.getProfilePicUrl())
                 .build();
     }
 
@@ -96,20 +106,27 @@ public class UserService {
                     .firstName(user.getFirstName())
                     .lastName(user.getLastName())
                     .moneyBalance(user.getMoneyBalance())
+                    .profilePicUrl(user.getProfilePicUrl())
                     .build());
         }
         return userInfo;
     }
 
-    public UserInfoDto updateUser(Long uid, Long id, Set<String> roles, UserInfoDto userInfoDto) {
+    public UserInfoDto updateUser(Long uid, Long id, Set<String> roles, UserInfoDto userInfoDto, MultipartFile image) {
         if(uid.equals(id) || roles.contains("ROLE_ADMIN")) {
             User user = userRepository.findById(uid)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
 
-            //TODO: custom mapper si actualizarea tuturor campurilor
-            user.setUsername(userInfoDto.getUsername());
-            userRepository.save(user);
 
+            //TODO: Check for username update and update on aws
+            user.setUsername(userInfoDto.getUsername());
+            String profilePicUrl = amazonService.upload("images", "profile_pic_" + user.getUsername(), image);
+            user.setEmail(userInfoDto.getEmail());
+            user.setLastName(userInfoDto.getLastName());
+            user.setFirstName(userInfoDto.getFirstName());
+            user.setProfilePicUrl(profilePicUrl);
+
+            userRepository.save(user);
             return UserInfoDto.builder()
                     .id(user.getId())
                     .username(user.getUsername())
@@ -117,6 +134,7 @@ public class UserService {
                     .firstName(user.getFirstName())
                     .lastName(user.getLastName())
                     .moneyBalance(user.getMoneyBalance())
+                    .profilePicUrl(user.getProfilePicUrl())
                     .build();
         }
 
@@ -128,8 +146,10 @@ public class UserService {
             User user = userRepository.findById(uid)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
 
+            amazonService.deleteFileFroms3bucket("images", "profile_pic_" + user.getUsername());
             userRepository.delete(user);
             keycloakAdminService.deleteUser(user.getId());
+
         }
         //TODO: DE REVAZUT EXCEPTII AICI  (good/bad practice)
         else {
