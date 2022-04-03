@@ -29,9 +29,10 @@ public class UserService {
     private final OrganizationRepository organizationRepository;
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
+    private final MailService mailService;
 
     @Autowired
-    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService, ProjectRepository projectRepository, DonationRepository donationRepository, TicketRepository ticketRepository, OrganizationRepository organizationRepository, CommentRepository commentRepository, PostRepository postRepository) {
+    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService, ProjectRepository projectRepository, DonationRepository donationRepository, TicketRepository ticketRepository, OrganizationRepository organizationRepository, CommentRepository commentRepository, PostRepository postRepository, MailService mailService) {
         this.userRepository = userRepository;
         this.keycloakAdminService = keycloakAdminService;
         this.amazonService = amazonService;
@@ -41,6 +42,7 @@ public class UserService {
         this.organizationRepository = organizationRepository;
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
+        this.mailService = mailService;
     }
 
     public void test(Long id) {
@@ -68,6 +70,7 @@ public class UserService {
 
         newUser = userRepository.save(newUser);
         keycloakAdminService.registerUser(newUser.getId(), registerDto.getPassword(), "ROLE_USER");
+        mailService.sendRegistrationEmail(newUser.getEmail(), newUser.getUsername(), newUser.getFirstName());
 
     }
 
@@ -91,6 +94,7 @@ public class UserService {
 
         newUser = userRepository.save(newUser);
         keycloakAdminService.registerUser(newUser.getId(), registerDto.getPassword(), "ROLE_ADMIN");
+        mailService.sendRegistrationEmail(newUser.getEmail(), newUser.getUsername(), newUser.getFirstName());
 
     }
 

@@ -32,14 +32,16 @@ public class DonationService {
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final AmazonService amazonService;
+    private final MailService mailService;
 
     @Autowired
-    public DonationService(DonationRepository donationRepository, ProjectRepository projectRepository, OrganizationRepository organizationRepository, UserRepository userRepository, AmazonService amazonService) {
+    public DonationService(DonationRepository donationRepository, ProjectRepository projectRepository, OrganizationRepository organizationRepository, UserRepository userRepository, AmazonService amazonService, MailService mailService) {
         this.donationRepository = donationRepository;
         this.projectRepository = projectRepository;
         this.organizationRepository = organizationRepository;
         this.userRepository = userRepository;
         this.amazonService = amazonService;
+        this.mailService = mailService;
     }
 
     public DonationDto donate(Long orgId, Long projectId, Long uid, DonationDto donationDto) throws FileNotFoundException, DocumentException {
@@ -90,6 +92,7 @@ public class DonationService {
             String docName = ReceiptUtility.generateReceipt(receiptInfo);
             File file = new File(docName);
             String receiptUrl = amazonService.uploadFile("receipts",docName, file);
+            mailService.sendReceiptEmail(user.getEmail(), docName, receiptUrl);
 
             donation.setReceiptUrl(receiptUrl);
             donationRepository.save(donation);

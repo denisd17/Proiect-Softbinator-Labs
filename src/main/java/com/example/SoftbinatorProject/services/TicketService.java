@@ -26,13 +26,15 @@ public class TicketService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final AmazonService amazonService;
+    private final MailService mailService;
 
     @Autowired
-    public TicketService(TicketRepository ticketRepository, ProjectRepository projectRepository, UserRepository userRepository, AmazonService amazonService) {
+    public TicketService(TicketRepository ticketRepository, ProjectRepository projectRepository, UserRepository userRepository, AmazonService amazonService, MailService mailService) {
         this.ticketRepository = ticketRepository;
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.amazonService = amazonService;
+        this.mailService = mailService;
     }
 
     public TicketDto purchase(Long orgId, Long projectId, Long uid, TicketDto ticketDto) throws FileNotFoundException, DocumentException {
@@ -89,12 +91,10 @@ public class TicketService {
             String docName = ReceiptUtility.generateReceipt(receiptInfo);
             File file = new File(docName);
             String receiptUrl = amazonService.uploadFile("receipts",docName, file);
+            mailService.sendReceiptEmail(user.getEmail(), docName, receiptUrl);
 
             ticket.setReceiptUrl(receiptUrl);
             ticketRepository.save(ticket);
-
-            System.out.println("IMPORTANT");
-            System.out.println(user.getTickets().size());
 
             return TicketDto.builder()
                     .id(ticketId)
