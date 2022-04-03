@@ -92,9 +92,11 @@ public class AmazonService {
         s3client.deleteObject(bucketName, folderName + "/" + fileName);
     }
 
-    public void renameFileOns3bucket(String folderName, String fileName, String newFileName) {
+    public String renameFileOns3bucket(String folderName, String fileName, String newFileName) {
+        String fileUrl = endpointUrl + "/" + bucketName + "/" + folderName + "/" +newFileName;
         s3client.copyObject(bucketName, folderName + "/" + fileName, bucketName, folderName + "/" + newFileName);
         s3client.deleteObject(bucketName, folderName + "/" + fileName);
+        return fileUrl;
     }
     //
     private File convertMultiPartToFile(MultipartFile file) throws IOException {

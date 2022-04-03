@@ -7,6 +7,7 @@ import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurer
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
@@ -43,9 +44,21 @@ class KeycloakConfig extends KeycloakWebSecurityConfigurerAdapter {
 
                 .cors().and().csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/user/register-user", "/auth/login", "/refresh").permitAll()
-                .antMatchers("/test/user").hasAnyRole("USER", "ADMIN")
-                .antMatchers("/test/admin").hasAnyRole("ADMIN")
+                .antMatchers("/users/register-user", "/users/register-admin", "/login", "/refresh").permitAll()
+                .antMatchers("/users/**").authenticated()
+                .antMatchers("/posts/{postId}/comments").authenticated()
+                .antMatchers(HttpMethod.GET, "/projects/{projectId}/posts/**").authenticated()
+                .antMatchers("/projects/{projectId}/posts/**").hasAnyRole("ORG_ADMIN", "ORG_MODERATOR", "ADMIN")
+                .antMatchers(HttpMethod.GET, "/organizations/{id}/projects/**").authenticated()
+                .antMatchers("/projects/{projectId}/posts").hasAnyRole("ORG_ADMIN", "ORG_MODERATOR", "ADMIN")
+                .antMatchers("/organizations/{id}/projects/{projectId}/donate", "/organizations/{id}/projects/{projectId}/purchase").authenticated()
+                .antMatchers("/organizations/{id}/projects/**").hasAnyRole("ORG_ADMIN", "ORG_MODERATOR", "ADMIN")
+                .antMatchers(HttpMethod.GET, "/organizations/{id}/moderators").hasAnyRole("ORG_ADMIN", "ADMIN")
+                .antMatchers(HttpMethod.GET, "/organizations/**").authenticated()
+                .antMatchers("/organizations/{id}/addModerator").hasAnyRole("ORG_ADMIN", "ADMIN")
+                .antMatchers("/organizations/{id}/removeModerator").hasAnyRole("ORG_ADMIN", "ADMIN")
+                .antMatchers(HttpMethod.POST, "/organizations").authenticated()
+                .antMatchers("/organizations/{id}").hasAnyRole("ORG_ADMIN", "ADMIN")
                 .anyRequest().permitAll();
     }
 }

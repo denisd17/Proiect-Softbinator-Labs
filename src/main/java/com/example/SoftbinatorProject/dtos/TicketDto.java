@@ -10,7 +10,7 @@ import lombok.Data;
 public class TicketDto {
     private Long id;
 
-    private Double amount;
+    private Integer amount;
 
     private Double ticketPrice;
 

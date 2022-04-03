@@ -6,7 +6,9 @@ import com.example.SoftbinatorProject.dtos.OrganizationInfoDto;
 import com.example.SoftbinatorProject.models.Organization;
 import com.example.SoftbinatorProject.models.User;
 import com.example.SoftbinatorProject.repositories.OrganizationRepository;
+import com.example.SoftbinatorProject.repositories.ProjectRepository;
 import com.example.SoftbinatorProject.repositories.UserRepository;
+import com.example.SoftbinatorProject.utils.AccessUtility;
 import org.aspectj.weaver.ast.Or;
 import org.bouncycastle.math.raw.Mod;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +25,14 @@ public class OrganizationService {
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final KeycloakAdminService keycloakAdminService;
+    private final ProjectRepository projectRepository;
 
     @Autowired
-    public OrganizationService(OrganizationRepository organizationRepository, UserRepository userRepository, KeycloakAdminService keycloakAdminService) {
+    public OrganizationService(OrganizationRepository organizationRepository, UserRepository userRepository, KeycloakAdminService keycloakAdminService, ProjectRepository projectRepository) {
         this.organizationRepository = organizationRepository;
         this.userRepository = userRepository;
         this.keycloakAdminService = keycloakAdminService;
+        this.projectRepository = projectRepository;
     }
 
     public OrganizationInfoDto createOrganization(OrganizationDto organizationDto, Long uid) {
@@ -38,11 +42,18 @@ public class OrganizationService {
                 .user(userRepository.getById(uid))
                 .build();
 
+        //User user = userRepository.getById(uid);
+        //if(!user.getRole().equals("admin"))
+        //    user.setRole("org_admin");
+        //userRepository.save(user);
+
         organizationRepository.save(newOrganization);
 
         keycloakAdminService.addRole("ROLE_ORG_ADMIN", uid);
-
+        User user = userRepository.getById(uid);
+        System.out.println(user.getOrganizations().size());
         return OrganizationInfoDto.builder()
+                .id(newOrganization.getId())
                 .name(newOrganization.getName())
                 .description(newOrganization.getDescription())
                 .organizationOwner(newOrganization.getUser().getUsername())
@@ -50,42 +61,33 @@ public class OrganizationService {
     }
 
     public OrganizationInfoDto getOrganization(Long id) {
-        //TODO: Organization does not exist check
-        Organization organization = organizationRepository.getById(id);
+        OrganizationInfoDto organizationInfoDto = organizationRepository.getOrganizationDtoById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist"));
 
-        return OrganizationInfoDto.builder()
-                .name(organization.getName())
-                .description(organization.getDescription())
-                .organizationOwner(organization.getUser().getUsername())
-                .build();
+        organizationInfoDto.setProjects(projectRepository.getProjectsDtoByOrgId(id));
+
+        return organizationInfoDto;
     }
 
     public List<OrganizationInfoDto> getOrganizations() {
-        List<Organization> organizations = organizationRepository.findAll();
-        List<OrganizationInfoDto> organizationInfoDtos = new ArrayList<>();
 
-        for(Organization o : organizations) {
-            organizationInfoDtos.add(OrganizationInfoDto.builder()
-                    .name(o.getName())
-                    .description(o.getDescription())
-                    .organizationOwner(o.getUser().getUsername())
-                    .build());
-        }
-
-        return organizationInfoDtos;
+        return organizationRepository.getOrganizationDtos();
     }
 
     public OrganizationInfoDto updateOrganization(OrganizationInfoDto organizationInfoDto, Long id, Long uid, Set<String> roles) {
-        //TODO: Organization does not exist check
-        Organization organization = organizationRepository.getById(id);
+        Organization organization = organizationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist"));
 
         if(organization.getUser().getId().equals(uid) && roles.contains("ROLE_ORG_ADMIN") || roles.contains("ROLE_ADMIN")) {
-            //TODO: check for null fields when updating
-            organization.setName(organizationInfoDto.getName());
-            organization.setDescription(organizationInfoDto.getDescription());
+            if(organizationInfoDto.getName() != null)
+                organization.setName(organizationInfoDto.getName());
+            if(organizationInfoDto.getDescription() != null)
+                organization.setDescription(organizationInfoDto.getDescription());
+
             organizationRepository.save(organization);
 
             return OrganizationInfoDto.builder()
+                    .id(organization.getId())
                     .name(organization.getName())
                     .description(organization.getDescription())
                     .organizationOwner(organization.getUser().getUsername())
@@ -96,37 +98,56 @@ public class OrganizationService {
     }
 
     public void deleteOrganization(Long id, Long uid, Set<String> roles) {
-        //TODO: Organization does not exist check
-        Organization organization = organizationRepository.getById(id);
+        Organization organization = organizationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist"));
 
         // Verificam ca userul care incearca stergerea organizatiei sa fie
         // administratorul organizatiei respective sau administrator
-        if(organization.getUser().getId().equals(uid) && roles.contains("ROLE_ORG_ADMIN") || roles.contains("ROLE_ADMIN")) {
+        if(AccessUtility.isAdmin(roles) || AccessUtility.isOrgAdmin(organization, uid)) {
 
             // Se revoca rolul de moderator fiecarui utilizator ce nu mai e moderator in nici o alta organizatie
             for(User u : organization.getModerators()) {
                 if(u.getModeratedOrganizations().size() == 1) {
                     keycloakAdminService.removeRole("ROLE_ORG_MODERATOR", u.getId());
+                    //// Daca moderatorul nu era admin pe aplicatie sau admin al altei organizatii, devine user
+                    //if(u.getRole().equals("org_moderator")){
+                    //    u.setRole("user");
+                    //    userRepository.save(u);
+                    //}
                 }
                 //TODO: de revazut many-to-many deletion
                 u.getModeratedOrganizations().remove(organization);
             }
 
+            User user = organization.getUser();
             organizationRepository.delete(organization);
-            User user = userRepository.getById(uid);
-
+            System.out.println(user.getId());
             // In cazul in care nu mai exista alte organizatii administrate de user, administratorului i se revoca rolul de ORG_ADMIN
             if(user.getOrganizations().size() == 0){
-                keycloakAdminService.removeRole("ROLE_ORG_ADMIN", uid);
+                keycloakAdminService.removeRole("ROLE_ORG_ADMIN", user.getId());
+                // Daca utilizatorul nu e admin pe aplicatie si nu mai modereaza nici o alta organizatie
+                // devine user
+                //if(user.getRole().equals("org_admin") && user.getModeratedOrganizations().size() == 0) {
+                //    user.setRole("user");
+                //    userRepository.save(user);
+                //}
+                // Daca utilizatorul nu e admin pe aplicatie, dar mai modereaza alte organizatii
+                // devine org_moderator
+                //else if(user.getRole().equals("org_admin") && user.getModeratedOrganizations().size() > 0) {
+                //    user.setRole("org_moderator");
+                //    userRepository.save(user);
+                //}
             }
         }
+        else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
+        }
 
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
 
     }
     public List<ModeratorInfoDto> getModeratorList(Long id, Long uid, Set<String> roles) {
-        //TODO: Organization does not exist check
-        Organization organization = organizationRepository.getById(id);
+        Organization organization = organizationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist"));
 
         // Verificam ca userul care incearca adaugarea moderatorului sa fie
         // administratorul organizatiei respective sau administrator
@@ -140,12 +161,12 @@ public class OrganizationService {
 
     //TODO: Fix lista de moderatori corecta la adaugare / stergere
     public List<ModeratorInfoDto> addModerator(Long id, Long moderatorId, Long uid, Set<String> roles) {
-        //TODO: Organization does not exist check
-        Organization organization = organizationRepository.getById(id);
+        Organization organization = organizationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist"));
 
         // Verificam ca userul care incearca adaugarea moderatorului sa fie
         // administratorul organizatiei respective sau administrator
-        if(organization.getUser().getId().equals(uid) && roles.contains("ROLE_ORG_ADMIN") || roles.contains("ROLE_ADMIN")) {
+        if(AccessUtility.isAdmin(roles) || AccessUtility.isOrgAdmin(organization, uid)) {
             //TODO: check user
             User user = userRepository.getById(moderatorId);
 
@@ -155,7 +176,15 @@ public class OrganizationService {
             else {
                 user.getModeratedOrganizations().add(organization);
                 userRepository.save(user);
+
+                organization.getModerators().add(user);
+                organizationRepository.save(organization);
+
                 keycloakAdminService.addRole("ROLE_ORG_MODERATOR", moderatorId);
+                //if(user.getRole().equals("user")) {
+                //    user.setRole("org_moderator");
+                //    userRepository.save(user);
+                //}
                 return getModeratorListUtil(organization);
             }
         }
@@ -163,12 +192,12 @@ public class OrganizationService {
     }
 
     public List<ModeratorInfoDto> removeModerator(Long id, Long moderatorId, Long uid, Set<String> roles) {
-        //TODO: Organization does not exist check
-        Organization organization = organizationRepository.getById(id);
+        Organization organization = organizationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist"));
 
         // Verificam ca userul care incearca adaugarea moderatorului sa fie
         // administratorul organizatiei respective sau administrator
-        if(organization.getUser().getId().equals(uid) && roles.contains("ROLE_ORG_ADMIN") || roles.contains("ROLE_ADMIN")) {
+        if(AccessUtility.isAdmin(roles) || AccessUtility.isOrgAdmin(organization, uid)) {
             //TODO: check user
             User user = userRepository.getById(moderatorId);
 
@@ -179,9 +208,16 @@ public class OrganizationService {
                 user.getModeratedOrganizations().remove(organization);
                 userRepository.save(user);
 
+                organization.getModerators().remove(user);
+                organizationRepository.save(organization);
+
                 // Daca moderatorul nu mai este moderator al unei alte organizatii, i se revoca rolul de ORG_MODERATOR
                 if(user.getModeratedOrganizations().size() == 0) {
                     keycloakAdminService.removeRole("ROLE_ORG_MODERATOR", moderatorId);
+                //    if(user.getRole().equals("org_moderator")) {
+                //        user.setRole("user");
+                //        userRepository.save(user);
+                //    }
                 }
 
                 return getModeratorListUtil(organization);
@@ -203,8 +239,6 @@ public class OrganizationService {
         }
 
         return organizationModerators;
-
     }
-
 
 }

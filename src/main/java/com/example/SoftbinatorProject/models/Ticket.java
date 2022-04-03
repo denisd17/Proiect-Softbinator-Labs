@@ -21,7 +21,7 @@ public class Ticket {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private Double amount;
+    private Integer amount;
 
     private Double price;
 

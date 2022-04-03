@@ -20,6 +20,15 @@ public class Event extends Project{
 
     private Integer ticketAmount;
 
+    private Integer extraTicketsSold;
+
+    private Double extraAmount;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "event")
     private List<Ticket> tickets;
+
+    public void addExtra(Integer extraTicketsSold, Double extraAmount) {
+        this.extraTicketsSold += extraTicketsSold;
+        this.extraAmount += extraAmount * extraTicketsSold;
+    }
 }

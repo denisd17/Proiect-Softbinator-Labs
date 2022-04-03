@@ -9,6 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import javax.persistence.DiscriminatorValue;
+import java.util.List;
+
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,4 +31,12 @@ public class ProjectInfoDto {
 
     private String description;
 
+    private List<PostDto> posts;
+
+    public ProjectInfoDto(Class<?> type, Long id, String name, String description) {
+        this.type = type.getAnnotation(DiscriminatorValue.class).value();
+        this.id = id;
+        this.name = name;
+        this.description = description;
+    }
 }

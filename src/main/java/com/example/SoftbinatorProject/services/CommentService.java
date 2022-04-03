@@ -7,6 +7,7 @@ import com.example.SoftbinatorProject.models.User;
 import com.example.SoftbinatorProject.repositories.CommentRepository;
 import com.example.SoftbinatorProject.repositories.PostRepository;
 import com.example.SoftbinatorProject.repositories.UserRepository;
+import com.example.SoftbinatorProject.utils.AccessUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,8 +33,8 @@ public class CommentService {
     }
 
     public CommentDto createComment(CommentDto commentDto, Long postId, Long uid) {
-        //TODO: Check if exists
-        Post post = postRepository.getById(postId);
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project or post do not exist!"));
         User user = userRepository.getById(uid);
 
         Comment newComment = Comment.builder()
@@ -51,36 +52,22 @@ public class CommentService {
                 .build();
     }
 
-    /*
-    public CommentDto getComment(Long postId, Long commentId) {
-
-    }*/
-
     public List<CommentDto> getComments(Long postId) {
-        List<Comment> comments = commentRepository.findAllByPostId(postId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post does not exist!"));
-
-        List<CommentDto> commentDtos = new ArrayList<>();
-
-        for(Comment comment : comments) {
-            commentDtos.add(CommentDto.builder()
-                    .id(comment.getId())
-                    .content(comment.getContent())
-                    .uid(comment.getUser().getId())
-                    .build());
+        if(postRepository.checkIfPostExists(postId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post does not exist");
         }
-
-        return commentDtos;
+        return commentRepository.getCommentDtosByPostId(postId);
 
     }
 
-    public CommentDto updateComment(CommentDto commentDto, Long postId, Long commentId, Long uid) {
+    public CommentDto updateComment(CommentDto commentDto, Long postId, Long commentId, Long uid, Set<String> roles) {
         Comment comment = commentRepository.findById(commentId, postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post or comment do not exist!"));
 
-        //TODO: Also allow app admin
-        if(comment.getUser().getId().equals(uid)) {
-            comment.setContent(commentDto.getContent());
+        if(comment.getUser().getId().equals(uid) || AccessUtility.isAdmin(roles)) {
+            if(commentDto.getContent() != null)
+                comment.setContent(commentDto.getContent());
+
             commentRepository.save(comment);
 
             return CommentDto.builder()
@@ -97,8 +84,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId, postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post or comment do not exist!"));
 
-        //TODO: Also allow app admin
-        if(comment.getUser().getId().equals(uid)) {
+        if(comment.getUser().getId().equals(uid) || AccessUtility.isAdmin(roles)) {
             commentRepository.delete(comment);
         }
         else {

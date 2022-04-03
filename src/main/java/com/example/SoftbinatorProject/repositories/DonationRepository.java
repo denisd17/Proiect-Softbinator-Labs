@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @Repository
 public interface DonationRepository extends JpaRepository<Donation, Long> {
-    @Query("SELECT SUM(d.amount) from Donation d where d.fundraiser.id = :id")
+    @Query("SELECT coalesce(SUM(d.amount), 0) from Donation d where d.fundraiser.id = :id")
     Double getRaisedAmount(Long id);
 
 

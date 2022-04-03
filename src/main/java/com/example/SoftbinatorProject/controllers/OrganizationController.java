@@ -24,7 +24,7 @@ public class OrganizationController {
         this.organizationService = organizationService;
     }
 
-    @PostMapping("/create-organization")
+    @PostMapping("")
     public ResponseEntity<?> createOrganization(@RequestBody OrganizationDto organizationDto, Authentication authentication) {
         return new ResponseEntity<>(organizationService.createOrganization(organizationDto, Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
     }
@@ -55,7 +55,7 @@ public class OrganizationController {
         return new ResponseEntity<>(organizationService.addModerator(id, moderatorId, Long.parseLong(KeycloakHelper.getUser(authentication)), KeycloakHelper.getUserRoles(authentication)), HttpStatus.OK);
     }
 
-    @PutMapping("/{id}/removeModerator/{moderatorId}")
+    @DeleteMapping("/{id}/removeModerator/{moderatorId}")
     public ResponseEntity<?> removeModerator(@PathVariable Long id, @PathVariable Long moderatorId, Authentication authentication) {
         return new ResponseEntity<>(organizationService.removeModerator(id, moderatorId, Long.parseLong(KeycloakHelper.getUser(authentication)), KeycloakHelper.getUserRoles(authentication)), HttpStatus.OK);
     }

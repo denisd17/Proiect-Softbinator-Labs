@@ -3,6 +3,7 @@ package com.example.SoftbinatorProject.controllers;
 import com.example.SoftbinatorProject.dtos.BalanceDto;
 import com.example.SoftbinatorProject.dtos.RegisterDto;
 import com.example.SoftbinatorProject.dtos.UserInfoDto;
+import com.example.SoftbinatorProject.models.User;
 import com.example.SoftbinatorProject.services.UserService;
 import com.example.SoftbinatorProject.utils.KeycloakHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +31,14 @@ public class UserController {
 
     //TODO: Handle missing image
     @PostMapping("/register-user")
-    public ResponseEntity<?> registerUser(@RequestPart("dto") RegisterDto registerDto, @RequestPart("image") MultipartFile image) {
+    public ResponseEntity<?> registerUser(@RequestPart("dto") RegisterDto registerDto, @RequestPart(value = "image", required = false) MultipartFile image) {
         userService.registerUser(registerDto, image);
         return successResponse();
     }
 
     //TODO: Handle missing image
     @PostMapping("/register-admin")
-    public ResponseEntity<?> registerAdmin(@RequestPart("dto") RegisterDto registerDto, @RequestPart("image") MultipartFile image) {
+    public ResponseEntity<?> registerAdmin(@RequestPart("dto") RegisterDto registerDto, @RequestPart(value = "image", required = false) MultipartFile image) {
         userService.registerAdmin(registerDto, image);
         return successResponse();
     }
@@ -46,7 +47,12 @@ public class UserController {
     public ResponseEntity<?> getUserInfo(@PathVariable Long id, Authentication authentication) {
         return new ResponseEntity<>(userService.getUser(id, Long.parseLong(KeycloakHelper.getUser(authentication)), KeycloakHelper.getUserRoles(authentication)), HttpStatus.OK);
     }*/
+    @GetMapping("/comments")
+    public void getComments(Authentication authentication) {
+        Long id = Long.parseLong(KeycloakHelper.getUser(authentication));
+        userService.test(id);
 
+    }
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(Authentication authentication) {
         return new ResponseEntity<>(userService.getUser(Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
@@ -58,7 +64,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestPart("dto") UserInfoDto userInfoDto, @RequestPart("image") MultipartFile image, Authentication authentication) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestPart(value = "dto", required = false) UserInfoDto userInfoDto, @RequestPart(value = "image", required = false) MultipartFile image, Authentication authentication) {
         return new ResponseEntity<>(userService.updateUser(id,
                 Long.parseLong(KeycloakHelper.getUser(authentication)),
                 KeycloakHelper.getUserRoles(authentication),

@@ -4,7 +4,8 @@ import com.example.SoftbinatorProject.dtos.BalanceDto;
 import com.example.SoftbinatorProject.dtos.ChangePasswordDto;
 import com.example.SoftbinatorProject.dtos.RegisterDto;
 import com.example.SoftbinatorProject.dtos.UserInfoDto;
-import com.example.SoftbinatorProject.models.User;
+import com.example.SoftbinatorProject.models.*;
+import com.example.SoftbinatorProject.repositories.ProjectRepository;
 import com.example.SoftbinatorProject.repositories.UserRepository;
 import lombok.SneakyThrows;
 import org.modelmapper.ModelMapper;
@@ -26,18 +27,25 @@ public class UserService {
     private final UserRepository userRepository;
     private final KeycloakAdminService keycloakAdminService;
     private final AmazonService amazonService;
+    private final ProjectRepository projectRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService) {
+    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService, ProjectRepository projectRepository) {
         this.userRepository = userRepository;
         this.keycloakAdminService = keycloakAdminService;
         this.amazonService = amazonService;
+        this.projectRepository = projectRepository;
+    }
+
+    public void test(Long id) {
+        User user = userRepository.getById(id);
+        System.out.println(user.getComments().size());
     }
 
     @SneakyThrows
     public void registerUser(RegisterDto registerDto, MultipartFile image) {
-        if (userRepository.findByEmail(registerDto.getEmail()).isPresent()) {
-            throw new BadRequestException("User with email " + registerDto.getEmail() + " already exists.");
+        if (userRepository.findByEmailOrUsername(registerDto.getEmail(), registerDto.getUsername()).isPresent()) {
+            throw new BadRequestException("Email or username already in use!");
         }
 
         String profilePicUrl = amazonService.upload("images", "profile_pic_" + registerDto.getUsername(), image);
@@ -59,8 +67,8 @@ public class UserService {
 
     @SneakyThrows
     public void registerAdmin(RegisterDto registerDto, MultipartFile image) {
-        if (userRepository.findByEmail(registerDto.getEmail()).isPresent()) {
-            throw new BadRequestException("User with email " + registerDto.getEmail() + " already exists.");
+        if (userRepository.findByEmailOrUsername(registerDto.getEmail(), registerDto.getUsername()).isPresent()) {
+            throw new BadRequestException("Email or username already in use!");
         }
 
         String profilePicUrl = amazonService.upload("images", "profile_pic_" + registerDto.getUsername(), image);
@@ -117,16 +125,57 @@ public class UserService {
             User user = userRepository.findById(uid)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
 
+            if(userInfoDto != null) {
+                if (!userRepository.findDifferentByEmailOrUsername(userInfoDto.getEmail(), userInfoDto.getUsername(), uid).isEmpty()) {
+                    throw new BadRequestException("Email or username already in use!");
+                }
 
-            //TODO: Check for username update and update on aws
-            user.setUsername(userInfoDto.getUsername());
-            String profilePicUrl = amazonService.upload("images", "profile_pic_" + user.getUsername(), image);
-            user.setEmail(userInfoDto.getEmail());
-            user.setLastName(userInfoDto.getLastName());
-            user.setFirstName(userInfoDto.getFirstName());
-            user.setProfilePicUrl(profilePicUrl);
+                String oldUsername = user.getUsername();
+                String profilePicUrl = user.getProfilePicUrl();
 
-            userRepository.save(user);
+                // Actualizam mai intai numele de utilizator
+                if(userInfoDto.getUsername() != null) {
+                    user.setUsername(userInfoDto.getUsername());
+                }
+                // Daca am actualizat numele si am oferit o noua poza
+                // Stergem vechea poza
+                // Incarcam noua poza cu numele corect
+                if(userInfoDto.getUsername() != null && image != null) {
+                    amazonService.deleteFileFroms3bucket("images", "profile_pic_" + oldUsername);
+                    profilePicUrl = amazonService.upload("images", "profile_pic_" + user.getUsername(), image);
+                }
+                // Daca am actualizat numele si nu am oferit o noua poza
+                // Actualizam numele pozei de profil in bucket
+                else if(userInfoDto.getUsername() != null && image == null) {
+                    profilePicUrl = amazonService.renameFileOns3bucket("images", "profile_pic_" + oldUsername, "profile_pic_" + user.getUsername());
+                }
+                else if(userInfoDto.getUsername() == null && image != null) {
+                    profilePicUrl = amazonService.upload("images", "profile_pic_" + user.getUsername(), image);
+                    user.setProfilePicUrl(profilePicUrl);
+                }
+
+                if(userInfoDto.getEmail() != null)
+                    user.setEmail(userInfoDto.getEmail());
+                if(userInfoDto.getFirstName() != null)
+                    user.setFirstName(userInfoDto.getFirstName());
+                if(userInfoDto.getLastName() != null)
+                    user.setLastName(userInfoDto.getLastName());
+
+                // Link catre poza veche in cazul in care nu a fost actualizata sau null in cazul in care nu a existat
+                user.setProfilePicUrl(profilePicUrl);
+
+                userRepository.save(user);
+            }
+            // Daca userInfoDto e null, inseamna ca am oferit doar imaginea pentru actualizare
+            else if(image != null){
+                String profilePicUrl = amazonService.upload("images", "profile_pic_" + user.getUsername(), image);
+                user.setProfilePicUrl(profilePicUrl);
+            }
+            // Bad Request daca nu am oferit nimic pentru update
+            else {
+                throw new BadRequestException();
+            }
+
             return UserInfoDto.builder()
                     .id(user.getId())
                     .username(user.getUsername())
@@ -136,6 +185,7 @@ public class UserService {
                     .moneyBalance(user.getMoneyBalance())
                     .profilePicUrl(user.getProfilePicUrl())
                     .build();
+
         }
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access user info!");
@@ -145,13 +195,38 @@ public class UserService {
         if(uid.equals(id) || roles.contains("ROLE_ADMIN")) {
             User user = userRepository.findById(uid)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
+            //Stergerea donatiilor si a biletelor userului
+            for(Donation d : user.getDonations()) {
+                Double amount = d.getAmount();
+                Fundraiser fundraiser = d.getFundraiser();
+                fundraiser.addExtra(amount);
+                fundraiser.getDonations().remove(d);
+                projectRepository.save(fundraiser);
+            }
 
+            for(Ticket t : user.getTickets()) {
+                Integer amount = t.getAmount();
+                Double price = t.getPrice();
+                Event event = t.getEvent();
+                event.addExtra(amount, price);
+                event.getTickets().remove(t);
+                projectRepository.save(event);
+            }
+
+            //Stergerea moderatorilor din organizatiile userului
+            for(Organization o : user.getOrganizations()) {
+                for(User u : o.getModerators()) {
+                    if(u.getModeratedOrganizations().size() == 1) {
+                        keycloakAdminService.removeRole("ROLE_ORG_MODERATOR", u.getId());
+                    }
+                    u.getOrganizations().remove(o);
+                }
+            }
             amazonService.deleteFileFroms3bucket("images", "profile_pic_" + user.getUsername());
             userRepository.delete(user);
             keycloakAdminService.deleteUser(user.getId());
 
         }
-        //TODO: DE REVAZUT EXCEPTII AICI  (good/bad practice)
         else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access user info!");
         }

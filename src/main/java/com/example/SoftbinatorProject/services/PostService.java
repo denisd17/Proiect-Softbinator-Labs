@@ -4,9 +4,11 @@ import com.example.SoftbinatorProject.dtos.PostDto;
 import com.example.SoftbinatorProject.models.Post;
 import com.example.SoftbinatorProject.models.Project;
 import com.example.SoftbinatorProject.models.User;
+import com.example.SoftbinatorProject.repositories.CommentRepository;
 import com.example.SoftbinatorProject.repositories.PostRepository;
 import com.example.SoftbinatorProject.repositories.ProjectRepository;
 import com.example.SoftbinatorProject.repositories.UserRepository;
+import com.example.SoftbinatorProject.utils.AccessUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,21 +24,24 @@ public class PostService {
     private final ProjectRepository projectRepository;
     private final KeycloakAdminService keycloakAdminService;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
 
     @Autowired
-    public PostService(PostRepository postRepository, ProjectRepository projectRepository, KeycloakAdminService keycloakAdminService, UserRepository userRepository) {
+    public PostService(PostRepository postRepository, ProjectRepository projectRepository, KeycloakAdminService keycloakAdminService, UserRepository userRepository, CommentRepository commentRepository) {
         this.postRepository = postRepository;
         this.projectRepository = projectRepository;
         this.keycloakAdminService = keycloakAdminService;
         this.userRepository = userRepository;
+        this.commentRepository = commentRepository;
     }
 
     public PostDto createPost(PostDto postDto, Long projectId, Long uid, Set<String> roles) {
-        //TODO: Check if project / user exist
-        Project project = projectRepository.getById(projectId);
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project does not exist!"));
+
         User user = userRepository.getById(uid);
 
-        if(project.getOrganization().getModerators().contains(user) || project.getOrganization().getUser().getId().equals(uid)) {
+        if(AccessUtility.isAdmin(roles) || AccessUtility.isOrgAdminOrMod(project.getOrganization(), user)) {
             Post newPost = Post.builder()
                     .title(postDto.getTitle())
                     .content(postDto.getContent())
@@ -56,32 +61,24 @@ public class PostService {
     }
 
     public PostDto getPost(Long projectId, Long postId) {
-        //TODO: check if exists
-        Post post = postRepository.findById(postId, projectId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project or post do not exist!"));
+        if(projectRepository.checkIfProjectExists(projectId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project does not exist");
+        }
 
-        return PostDto.builder()
-                .id(post.getId())
-                .title(post.getTitle())
-                .content(post.getContent())
-                .build();
+        PostDto postDto = postRepository.getPostDtoById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post does not exist"));
+
+        postDto.setComments(commentRepository.getCommentDtosByPostId(postId));
+
+        return postDto;
     }
 
     public List<PostDto> getPosts(Long projectId) {
-        List<Post> posts = postRepository.findAllByProjectId(projectId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project or post do not exist!"));
-
-        List<PostDto> postDtos = new ArrayList<>();
-
-        for(Post post : posts) {
-            postDtos.add(PostDto.builder()
-                    .id(post.getId())
-                    .title(post.getTitle())
-                    .content(post.getContent())
-                    .build());
+        if(projectRepository.checkIfProjectExists(projectId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project does not exist");
         }
 
-        return postDtos;
+        return postRepository.getPostDtosByProjectId(projectId);
     }
 
     public PostDto updatePost(PostDto postDto, Long projectId, Long postId, Long uid, Set<String> roles) {
@@ -91,10 +88,11 @@ public class PostService {
         Project project = projectRepository.getById(projectId);
         User user = userRepository.getById(uid);
 
-        //TODO: Also allow app admin
-        if(project.getOrganization().getModerators().contains(user) || project.getOrganization().getUser().getId().equals(uid)) {
-            post.setTitle(postDto.getTitle());
-            post.setContent(postDto.getContent());
+        if(AccessUtility.isAdmin(roles) || AccessUtility.isOrgAdminOrMod(project.getOrganization(), user)) {
+            if(postDto.getTitle() != null)
+                post.setTitle(postDto.getTitle());
+            if(postDto.getContent() != null)
+                post.setContent(postDto.getContent());
 
             postRepository.save(post);
 
@@ -115,8 +113,7 @@ public class PostService {
         Project project = projectRepository.getById(projectId);
         User user = userRepository.getById(uid);
 
-        //TODO: Also allow app admin
-        if(project.getOrganization().getModerators().contains(user) || project.getOrganization().getUser().getId().equals(uid)) {
+        if(AccessUtility.isAdmin(roles) || AccessUtility.isOrgAdminOrMod(project.getOrganization(), user)) {
             postRepository.delete(post);
         }
         else {

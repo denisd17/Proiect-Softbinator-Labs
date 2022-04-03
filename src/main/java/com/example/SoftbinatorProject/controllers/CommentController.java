@@ -44,6 +44,6 @@ public class CommentController {
 
     @PutMapping("/{commentId}")
     public ResponseEntity<?> updateComment(@PathVariable Long postId, @PathVariable Long commentId, @RequestBody CommentDto commentDto, Authentication authentication) {
-        return new ResponseEntity<>(commentService.updateComment(commentDto, postId, commentId, Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
+        return new ResponseEntity<>(commentService.updateComment(commentDto, postId, commentId, Long.parseLong(KeycloakHelper.getUser(authentication)), KeycloakHelper.getUserRoles(authentication)), HttpStatus.OK);
     }
 }

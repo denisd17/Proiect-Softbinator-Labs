@@ -18,6 +18,13 @@ import java.util.List;
 public class Fundraiser extends Project{
     private Double goal;
 
+    // Banii din donatiile sterse
+    private Double extra;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "fundraiser")
     private List<Donation> donations;
+
+    public void addExtra(Double extra) {
+        this.extra += extra;
+    }
 }

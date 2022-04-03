@@ -97,6 +97,9 @@ public class TicketService {
             ticket.setReceiptUrl(receiptUrl);
             ticketRepository.save(ticket);
 
+            System.out.println("IMPORTANT");
+            System.out.println(user.getTickets().size());
+
             return TicketDto.builder()
                     .id(ticketId)
                     .amount(ticket.getAmount())
