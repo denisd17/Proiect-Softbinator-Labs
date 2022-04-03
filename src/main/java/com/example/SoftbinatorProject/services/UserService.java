@@ -1,12 +1,8 @@
 package com.example.SoftbinatorProject.services;
 
-import com.example.SoftbinatorProject.dtos.BalanceDto;
-import com.example.SoftbinatorProject.dtos.ChangePasswordDto;
-import com.example.SoftbinatorProject.dtos.RegisterDto;
-import com.example.SoftbinatorProject.dtos.UserInfoDto;
+import com.example.SoftbinatorProject.dtos.*;
 import com.example.SoftbinatorProject.models.*;
-import com.example.SoftbinatorProject.repositories.ProjectRepository;
-import com.example.SoftbinatorProject.repositories.UserRepository;
+import com.example.SoftbinatorProject.repositories.*;
 import lombok.SneakyThrows;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +24,23 @@ public class UserService {
     private final KeycloakAdminService keycloakAdminService;
     private final AmazonService amazonService;
     private final ProjectRepository projectRepository;
+    private final DonationRepository donationRepository;
+    private final TicketRepository ticketRepository;
+    private final OrganizationRepository organizationRepository;
+    private final CommentRepository commentRepository;
+    private final PostRepository postRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService, ProjectRepository projectRepository) {
+    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService, ProjectRepository projectRepository, DonationRepository donationRepository, TicketRepository ticketRepository, OrganizationRepository organizationRepository, CommentRepository commentRepository, PostRepository postRepository) {
         this.userRepository = userRepository;
         this.keycloakAdminService = keycloakAdminService;
         this.amazonService = amazonService;
         this.projectRepository = projectRepository;
+        this.donationRepository = donationRepository;
+        this.ticketRepository = ticketRepository;
+        this.organizationRepository = organizationRepository;
+        this.commentRepository = commentRepository;
+        this.postRepository = postRepository;
     }
 
     public void test(Long id) {
@@ -91,6 +97,12 @@ public class UserService {
     public UserInfoDto getUser(Long uid) {
         User user = userRepository.findById(uid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
+
+        //TEST REMOVE
+        System.out.println("BILETE");
+        for(Ticket t : user.getTickets()) {
+            System.out.println(t.getId());
+        }
 
         return UserInfoDto.builder()
                 .id(user.getId())
@@ -195,33 +207,61 @@ public class UserService {
         if(uid.equals(id) || roles.contains("ROLE_ADMIN")) {
             User user = userRepository.findById(uid)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
-            //Stergerea donatiilor si a biletelor userului
+
+            System.out.println(user.getDonations().size());
+
+            // Stergerea donatiilor si a biletelor userului
             for(Donation d : user.getDonations()) {
                 Double amount = d.getAmount();
                 Fundraiser fundraiser = d.getFundraiser();
                 fundraiser.addExtra(amount);
+                //user.getDonations().remove(d);
                 fundraiser.getDonations().remove(d);
                 projectRepository.save(fundraiser);
+                donationRepository.delete(d);
             }
+            user.getDonations().clear();
 
             for(Ticket t : user.getTickets()) {
                 Integer amount = t.getAmount();
                 Double price = t.getPrice();
                 Event event = t.getEvent();
                 event.addExtra(amount, price);
+                //user.getTickets().remove(t);
                 event.getTickets().remove(t);
                 projectRepository.save(event);
+                ticketRepository.delete(t);
             }
+            user.getTickets().clear();
+            System.out.println(user.getComments().size());
+            // Stergerea comentariilor userului
+            for(Comment c : user.getComments()) {
+                Post p = c.getPost();
+                p.getComments().remove(c);
+                postRepository.save(p);
+                commentRepository.delete(c);
+            }
+            user.getComments().clear();
 
-            //Stergerea moderatorilor din organizatiile userului
+            // Stergerea moderatorilor din organizatiile userului
             for(Organization o : user.getOrganizations()) {
                 for(User u : o.getModerators()) {
                     if(u.getModeratedOrganizations().size() == 1) {
                         keycloakAdminService.removeRole("ROLE_ORG_MODERATOR", u.getId());
                     }
                     u.getOrganizations().remove(o);
+                    userRepository.save(u);
                 }
+                organizationRepository.delete(o);
             }
+            user.getOrganizations().clear();
+
+            user.getModeratedOrganizations().clear();
+
+            // Stergerea pozei de profil din bucket
+            System.out.println(user.getDonations().size());
+            System.out.println(user.getTickets().size());
+            System.out.println(user.getComments().size());
             amazonService.deleteFileFroms3bucket("images", "profile_pic_" + user.getUsername());
             userRepository.delete(user);
             keycloakAdminService.deleteUser(user.getId());
@@ -233,13 +273,8 @@ public class UserService {
 
     }
 
-    //TODO
-    public void updatePassword(Long uid, String password) {
-        ChangePasswordDto changePasswordDto = ChangePasswordDto.builder()
-                .userId(uid)
-                .newPassword(password)
-                .build();
-
+    public void changePassword(ChangePasswordDto changePasswordDto, Long uid) {
+        changePasswordDto.setUserId(uid);
         keycloakAdminService.changePassword(changePasswordDto);
     }
 
@@ -260,6 +295,14 @@ public class UserService {
                 .amountAdded(amount)
                 .newBalance(newBalance)
                 .build();
+    }
+
+    public ReceiptDto getReceipts(Long uid) {
+        ReceiptDto receiptDto = new ReceiptDto();
+        receiptDto.setDonations(donationRepository.getDonationDtos(uid));
+        receiptDto.setTickets(ticketRepository.getTicketDtos(uid));
+
+        return receiptDto;
     }
 
 }

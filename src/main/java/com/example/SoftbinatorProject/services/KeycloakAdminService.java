@@ -79,6 +79,13 @@ public class KeycloakAdminService {
 
     }
 
+    public void deleteAllUsers() {
+        List<UserRepresentation> users = realm.users().list();
+        for(UserRepresentation ur : users) {
+            realm.users().delete(ur.getId());
+        }
+    }
+
     public void changePassword(ChangePasswordDto changePasswordDto) {
         UserRepresentation userRepresentation = realm.users().search(changePasswordDto.getUserId().toString()).get(0);
 

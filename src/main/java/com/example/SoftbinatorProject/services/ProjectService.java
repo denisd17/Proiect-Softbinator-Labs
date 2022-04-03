@@ -101,6 +101,12 @@ public class ProjectService {
         if(project.getDecriminatorValue().equals("event")) {
             Event event = (Event) project;
 
+            //TEST REMOVE
+            System.out.println("LISTA BILETE");
+            for(Ticket t: event.getTickets()) {
+                System.out.println(t.getId());
+            }
+
             return EventInfoDto.builder()
                     .type(project.getDecriminatorValue())
                     .id(event.getId())

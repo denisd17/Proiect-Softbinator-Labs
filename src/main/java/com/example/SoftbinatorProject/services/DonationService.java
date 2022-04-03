@@ -95,6 +95,7 @@ public class DonationService {
             donationRepository.save(donation);
 
             return DonationDto.builder()
+                    .id(donation.getId())
                     .amount(donation.getAmount())
                     .projectId(fundraiser.getId())
                     .projectName(fundraiser.getName())

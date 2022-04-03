@@ -9,18 +9,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class DonationDto {
+public class DonationInfoDto {
     private Long id;
 
     private Double amount;
 
     private Long projectId;
-
-    private Long userId;
-
-    private String projectName;
-
-    private String username;
 
     private String receiptUrl;
 }

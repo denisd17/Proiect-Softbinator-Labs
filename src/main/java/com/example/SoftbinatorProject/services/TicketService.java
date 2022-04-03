@@ -71,11 +71,7 @@ public class TicketService {
             Double newBalance = user.getMoneyBalance() - ticket.getAmount() * ticket.getPrice();
             user.setMoneyBalance(newBalance);
             userRepository.save(user);
-
-            // Actualizare numar bilete ramase
-            Integer oldAmount = event.getTicketAmount();
-            event.setTicketAmount(oldAmount - ticketDto.getAmount().intValue());
-
+            
             // Generare factura donatie
             Map<String, String> receiptInfo = new HashMap<>();
             receiptInfo.put("NR", ticketId.toString());

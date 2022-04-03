@@ -35,7 +35,7 @@ public class User {
 
     private String profilePicUrl;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    @OneToMany(mappedBy = "user")
     private List<Organization> organizations;
 
     @ManyToMany
@@ -45,13 +45,13 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "organization_id"))
     private List<Organization> moderatedOrganizations;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    @OneToMany(mappedBy = "user")
     private List<Donation> donations;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    @OneToMany(mappedBy = "user")
     private List<Ticket> tickets;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    @OneToMany(mappedBy = "user")
     private List<Comment> comments;
 
     @CreationTimestamp

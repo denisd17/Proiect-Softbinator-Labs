@@ -1,8 +1,6 @@
 package com.example.SoftbinatorProject.controllers;
 
-import com.example.SoftbinatorProject.dtos.BalanceDto;
-import com.example.SoftbinatorProject.dtos.RegisterDto;
-import com.example.SoftbinatorProject.dtos.UserInfoDto;
+import com.example.SoftbinatorProject.dtos.*;
 import com.example.SoftbinatorProject.models.User;
 import com.example.SoftbinatorProject.services.UserService;
 import com.example.SoftbinatorProject.utils.KeycloakHelper;
@@ -58,6 +56,11 @@ public class UserController {
         return new ResponseEntity<>(userService.getUser(Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUser(@PathVariable Long id) {
+        return new ResponseEntity<>(userService.getUser(id), HttpStatus.OK);
+    }
+
     @GetMapping("")
     public ResponseEntity<List<UserInfoDto>> getUsersInfo() {
         return new ResponseEntity<>(userService.getUsers(), HttpStatus.OK);
@@ -72,7 +75,7 @@ public class UserController {
                 image),
                 HttpStatus.OK);
     }
-    //TODO: Delete profile pic from bucket
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id, Authentication authentication) {
         userService.deleteUser(id,
@@ -82,11 +85,17 @@ public class UserController {
         return successResponse();
     }
 
-    //TODO: change user password
-    /*@PutMapping("/change-password")
-    public ResponseEntity<?> updatePassword(Authentication authentication) {
-        userService.updatePassword();
-    }*/
+    @PutMapping("/change-password")
+    public ResponseEntity<?> updatePassword(@RequestBody ChangePasswordDto changePasswordDto, Authentication authentication) {
+        userService.changePassword(changePasswordDto, Long.parseLong(KeycloakHelper.getUser(authentication)));
+
+        return successResponse();
+    }
+
+    @GetMapping("/receipts")
+    public ResponseEntity<?> getReceipts(Authentication authentication) {
+        return new ResponseEntity<>(userService.getReceipts(Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
+    }
 
     //TODO: check if double is passed
     @PutMapping("/add-funds")
