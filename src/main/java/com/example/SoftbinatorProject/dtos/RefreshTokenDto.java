@@ -16,5 +16,4 @@ public class RefreshTokenDto {
 
     @NotNull
     private String grantType;
-
 }

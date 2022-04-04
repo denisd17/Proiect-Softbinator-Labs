@@ -56,8 +56,9 @@ public class PostService {
                     .content(newPost.getContent())
                     .build();
         }
-
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this project!");
+        else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this project!");
+        }
     }
 
     public PostDto getPost(Long projectId, Long postId) {
@@ -102,8 +103,9 @@ public class PostService {
                     .content(post.getContent())
                     .build();
         }
-
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this project!");
+        else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this project!");
+        }
     }
 
     public void deletePost(Long projectId, Long postId, Long uid, Set<String> roles) {

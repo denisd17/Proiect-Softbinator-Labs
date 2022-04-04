@@ -39,8 +39,9 @@ public class TicketService {
 
     public TicketDto purchase(Long orgId, Long projectId, Long uid, TicketDto ticketDto) throws FileNotFoundException, DocumentException {
         User user = userRepository.getById(uid);
-        //TODO: check or else throw
-        Project project = projectRepository.findById(projectId, orgId).orElseThrow();
+        Project project = projectRepository.findById(projectId, orgId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project or organization do not exist!"));
+
         if(project.getDecriminatorValue().equals("fundraiser")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can only purchase tickets from events!");
         }
@@ -57,9 +58,6 @@ public class TicketService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough tickets are available!");
         }
         else {
-            //TODO: check if project exists
-            //TODO: save receipt url in model
-
             Ticket ticket = Ticket.builder()
                     .amount(ticketDto.getAmount())
                     .price(event.getTicketPrice())
@@ -106,7 +104,6 @@ public class TicketService {
                     .username(user.getUsername())
                     .receiptUrl(receiptUrl)
                     .build();
-
         }
     }
 }

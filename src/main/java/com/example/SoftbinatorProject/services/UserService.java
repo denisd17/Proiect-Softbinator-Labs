@@ -30,9 +30,10 @@ public class UserService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final MailService mailService;
+    private final OrganizationService organizationService;
 
     @Autowired
-    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService, ProjectRepository projectRepository, DonationRepository donationRepository, TicketRepository ticketRepository, OrganizationRepository organizationRepository, CommentRepository commentRepository, PostRepository postRepository, MailService mailService) {
+    public UserService(UserRepository userRepository, KeycloakAdminService keycloakAdminService, AmazonService amazonService, ProjectRepository projectRepository, DonationRepository donationRepository, TicketRepository ticketRepository, OrganizationRepository organizationRepository, CommentRepository commentRepository, PostRepository postRepository, MailService mailService, OrganizationService organizationService) {
         this.userRepository = userRepository;
         this.keycloakAdminService = keycloakAdminService;
         this.amazonService = amazonService;
@@ -43,11 +44,7 @@ public class UserService {
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.mailService = mailService;
-    }
-
-    public void test(Long id) {
-        User user = userRepository.getById(id);
-        System.out.println(user.getComments().size());
+        this.organizationService = organizationService;
     }
 
     @SneakyThrows
@@ -99,41 +96,12 @@ public class UserService {
     }
 
     public UserInfoDto getUser(Long uid) {
-        User user = userRepository.findById(uid)
+        return userRepository.getUserDtoById(uid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
-
-        //TEST REMOVE
-        System.out.println("BILETE");
-        for(Ticket t : user.getTickets()) {
-            System.out.println(t.getId());
-        }
-
-        return UserInfoDto.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .moneyBalance(user.getMoneyBalance())
-                .profilePicUrl(user.getProfilePicUrl())
-                .build();
     }
 
     public List<UserInfoDto> getUsers() {
-        List<User> users = userRepository.findAll();
-        List<UserInfoDto> userInfo = new ArrayList<>();
-
-        for(User user : users) {
-            userInfo.add(UserInfoDto.builder().id(user.getId())
-                    .username(user.getUsername())
-                    .email(user.getEmail())
-                    .firstName(user.getFirstName())
-                    .lastName(user.getLastName())
-                    .moneyBalance(user.getMoneyBalance())
-                    .profilePicUrl(user.getProfilePicUrl())
-                    .build());
-        }
-        return userInfo;
+        return userRepository.getUserDtos();
     }
 
     public UserInfoDto updateUser(Long uid, Long id, Set<String> roles, UserInfoDto userInfoDto, MultipartFile image) {
@@ -203,16 +171,15 @@ public class UserService {
                     .build();
 
         }
-
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access user info!");
+        else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access user info!");
+        }
     }
 
     public void deleteUser(Long uid, Long id, Set<String> roles) {
         if(uid.equals(id) || roles.contains("ROLE_ADMIN")) {
             User user = userRepository.findById(uid)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
-
-            System.out.println(user.getDonations().size());
 
             // Stergerea donatiilor si a biletelor userului
             for(Donation d : user.getDonations()) {
@@ -237,7 +204,7 @@ public class UserService {
                 ticketRepository.delete(t);
             }
             user.getTickets().clear();
-            System.out.println(user.getComments().size());
+
             // Stergerea comentariilor userului
             for(Comment c : user.getComments()) {
                 Post p = c.getPost();
@@ -247,26 +214,21 @@ public class UserService {
             }
             user.getComments().clear();
 
-            // Stergerea moderatorilor din organizatiile userului
+            System.out.println(user.getOrganizations().size());
+
+
+
+            // Stergerea organizatiilor userului
             for(Organization o : user.getOrganizations()) {
-                for(User u : o.getModerators()) {
-                    if(u.getModeratedOrganizations().size() == 1) {
-                        keycloakAdminService.removeRole("ROLE_ORG_MODERATOR", u.getId());
-                    }
-                    u.getOrganizations().remove(o);
-                    userRepository.save(u);
-                }
-                organizationRepository.delete(o);
+                organizationService.deleteOrganization(o.getId(), id, roles);
             }
             user.getOrganizations().clear();
 
             user.getModeratedOrganizations().clear();
-
             // Stergerea pozei de profil din bucket
-            System.out.println(user.getDonations().size());
-            System.out.println(user.getTickets().size());
-            System.out.println(user.getComments().size());
             amazonService.deleteFileFroms3bucket("images", "profile_pic_" + user.getUsername());
+
+            // Stergere user din db si din keycloak
             userRepository.delete(user);
             keycloakAdminService.deleteUser(user.getId());
 
@@ -274,7 +236,6 @@ public class UserService {
         else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access user info!");
         }
-
     }
 
     public void changePassword(ChangePasswordDto changePasswordDto, Long uid) {

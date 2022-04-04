@@ -63,5 +63,4 @@ public class User {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "modify_date")
     private Date modifyDate;
-
 }

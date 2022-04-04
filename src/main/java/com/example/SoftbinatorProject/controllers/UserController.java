@@ -27,30 +27,18 @@ public class UserController {
         this.userService = userService;
     }
 
-    //TODO: Handle missing image
     @PostMapping("/register-user")
-    public ResponseEntity<?> registerUser(@RequestPart("dto") RegisterDto registerDto, @RequestPart(value = "image", required = false) MultipartFile image) {
+    public ResponseEntity<?> registerUser(@RequestPart("json") RegisterDto registerDto, @RequestPart(value = "image", required = false) MultipartFile image) {
         userService.registerUser(registerDto, image);
         return successResponse();
     }
 
-    //TODO: Handle missing image
     @PostMapping("/register-admin")
-    public ResponseEntity<?> registerAdmin(@RequestPart("dto") RegisterDto registerDto, @RequestPart(value = "image", required = false) MultipartFile image) {
+    public ResponseEntity<?> registerAdmin(@RequestPart("json") RegisterDto registerDto, @RequestPart(value = "image", required = false) MultipartFile image) {
         userService.registerAdmin(registerDto, image);
         return successResponse();
     }
 
-    /*@GetMapping("/{id}")
-    public ResponseEntity<?> getUserInfo(@PathVariable Long id, Authentication authentication) {
-        return new ResponseEntity<>(userService.getUser(id, Long.parseLong(KeycloakHelper.getUser(authentication)), KeycloakHelper.getUserRoles(authentication)), HttpStatus.OK);
-    }*/
-    @GetMapping("/comments")
-    public void getComments(Authentication authentication) {
-        Long id = Long.parseLong(KeycloakHelper.getUser(authentication));
-        userService.test(id);
-
-    }
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(Authentication authentication) {
         return new ResponseEntity<>(userService.getUser(Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
@@ -67,7 +55,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestPart(value = "dto", required = false) UserInfoDto userInfoDto, @RequestPart(value = "image", required = false) MultipartFile image, Authentication authentication) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestPart(value = "json", required = false) UserInfoDto userInfoDto, @RequestPart(value = "image", required = false) MultipartFile image, Authentication authentication) {
         return new ResponseEntity<>(userService.updateUser(id,
                 Long.parseLong(KeycloakHelper.getUser(authentication)),
                 KeycloakHelper.getUserRoles(authentication),
@@ -97,11 +85,9 @@ public class UserController {
         return new ResponseEntity<>(userService.getReceipts(Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
     }
 
-    //TODO: check if double is passed
     @PutMapping("/add-funds")
     public ResponseEntity<?> addFunds(Authentication authentication, @RequestBody Double ammount) {
         return new ResponseEntity<>(userService.addFunds(Long.parseLong(KeycloakHelper.getUser(authentication)), ammount), HttpStatus.OK);
     }
-
 
 }

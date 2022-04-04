@@ -40,12 +40,4 @@ public class Comment {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "modify_date")
     private Date modifyDate;
-
-    //@PreRemove
-    //private void removeCommentFromPostsAndUsers() {
-    //    this.user.getComments().remove(this);
-    //    this.post.getComments().remove(this);
-    //}
-
-
 }

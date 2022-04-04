@@ -26,11 +26,6 @@ public class CommentController {
         return new ResponseEntity<>(commentService.createComment(commentDto, postId, Long.parseLong(KeycloakHelper.getUser(authentication))), HttpStatus.OK);
     }
 
-    /*@GetMapping("/{commentId}")
-    public ResponseEntity<?> getComment(@PathVariable Long postId, @PathVariable Long commentId) {
-        return new ResponseEntity<>(commentService.getComment(postId, commentId), HttpStatus.OK);
-    }*/
-
     @GetMapping("")
     public ResponseEntity<List<CommentDto>> getComments(@PathVariable Long postId) {
         return new ResponseEntity<>(commentService.getComments(postId), HttpStatus.OK);

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.DiscriminatorValue;
+import java.util.Date;
 import java.util.List;
 
 
@@ -17,11 +18,6 @@ import java.util.List;
 @AllArgsConstructor
 @Data
 @SuperBuilder
-//@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type", visible = true)
-//@JsonSubTypes({
-//        @JsonSubTypes.Type(value = EventInfoDto.class, name = "Event"),
-//        @JsonSubTypes.Type(value = FundraiserInfoDto.class, name = "Fundraiser")
-//})
 public class ProjectInfoDto {
     private String type;
 

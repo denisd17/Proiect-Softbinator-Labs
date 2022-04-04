@@ -9,9 +9,11 @@ import com.example.SoftbinatorProject.repositories.UserRepository;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.ws.rs.NotFoundException;
 import java.util.Optional;
@@ -44,9 +46,13 @@ public class AuthService {
         loginCredentials.add("password", loginDto.getPassword());
         loginCredentials.add("grant_type", loginDto.getGrantType());
         // Keycloak login (will return an Access Token)
-        TokenDto token = authClient.login(loginCredentials);
-        return token;
-
+        try{
+            TokenDto token = authClient.login(loginCredentials);
+            return token;
+        }
+        catch(Exception e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email or password incorrect!");
+        }
     }
 
     @SneakyThrows

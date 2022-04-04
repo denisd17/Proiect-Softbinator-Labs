@@ -46,8 +46,8 @@ public class DonationService {
 
     public DonationDto donate(Long orgId, Long projectId, Long uid, DonationDto donationDto) throws FileNotFoundException, DocumentException {
         User user = userRepository.getById(uid);
-        //TODO: check or else throw
-        Project project = projectRepository.findById(projectId, orgId).orElseThrow();
+        Project project = projectRepository.findById(projectId, orgId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project or organization do not exist!"));
 
         if(donationDto.getAmount() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid donation amount!");
@@ -59,8 +59,6 @@ public class DonationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can only donate to fundraisers!");
         }
         else {
-            //TODO: check if project exists
-            //TODO: save receipt url in model
             Fundraiser fundraiser = (Fundraiser) project;
             Donation donation = Donation.builder()
                     .amount(donationDto.getAmount())
@@ -107,6 +105,5 @@ public class DonationService {
                     .receiptUrl(receiptUrl)
                     .build();
         }
-
     }
 }

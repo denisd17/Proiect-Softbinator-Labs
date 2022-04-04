@@ -31,16 +31,6 @@ public class ProjectController {
         this.ticketService = ticketService;
     }
 
-    /*@PostMapping("/create-fundraiser")
-    public ResponseEntity<?> createFundraiser(@PathVariable Long id, @RequestBody FundraiserInfoDto fundraiserInfoDto) {
-        return new ResponseEntity<>(projectService.createFundraiser(fundraiserInfoDto, id), HttpStatus.OK);
-    }
-
-    @PostMapping("/create-event")
-    public ResponseEntity<?> createEvent(@PathVariable Long id, @RequestBody EventInfoDto eventInfoDto) {
-        return new ResponseEntity<>(projectService.createEvent(eventInfoDto, id), HttpStatus.OK);
-    }*/
-
     @PostMapping("")
     public ResponseEntity<?> createProject(@PathVariable Long id, @RequestBody CreateProjectDto createProjectDto, Authentication authentication) {
         return new ResponseEntity<>(projectService.createProject(createProjectDto, id, Long.parseLong(KeycloakHelper.getUser(authentication)), KeycloakHelper.getUserRoles(authentication)), HttpStatus.OK);

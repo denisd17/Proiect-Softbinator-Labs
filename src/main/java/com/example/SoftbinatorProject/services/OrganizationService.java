@@ -44,7 +44,7 @@ public class OrganizationService {
 
         organizationRepository.save(newOrganization);
         keycloakAdminService.addRole("ROLE_ORG_ADMIN", uid);
-        User user = userRepository.getById(uid);
+        //User user = userRepository.getById(uid);
 
         return OrganizationInfoDto.builder()
                 .id(newOrganization.getId())
@@ -64,7 +64,6 @@ public class OrganizationService {
     }
 
     public List<OrganizationInfoDto> getOrganizations() {
-
         return organizationRepository.getOrganizationDtos();
     }
 
@@ -104,8 +103,9 @@ public class OrganizationService {
                 if(u.getModeratedOrganizations().size() == 1) {
                     keycloakAdminService.removeRole("ROLE_ORG_MODERATOR", u.getId());
                 }
-                //TODO: de revazut many-to-many deletion
                 u.getModeratedOrganizations().remove(organization);
+                //!
+                userRepository.save(u);
             }
 
             User user = organization.getUser();
@@ -118,9 +118,8 @@ public class OrganizationService {
         else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
         }
-
-
     }
+
     public List<ModeratorInfoDto> getModeratorList(Long id, Long uid, Set<String> roles) {
         Organization organization = organizationRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist"));
@@ -135,7 +134,6 @@ public class OrganizationService {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
     }
 
-    //TODO: Fix lista de moderatori corecta la adaugare / stergere
     public List<ModeratorInfoDto> addModerator(Long id, Long moderatorId, Long uid, Set<String> roles) {
         Organization organization = organizationRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist"));
@@ -143,8 +141,8 @@ public class OrganizationService {
         // Verificam ca userul care incearca adaugarea moderatorului sa fie
         // administratorul organizatiei respective sau administrator
         if(AccessUtility.isAdmin(roles) || AccessUtility.isOrgAdmin(organization, uid)) {
-            //TODO: check user
-            User user = userRepository.getById(moderatorId);
+            User user = userRepository.findById(moderatorId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
 
             if(organization.getModerators().contains(user)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is already a moderator of the organization");
@@ -161,7 +159,9 @@ public class OrganizationService {
                 return getModeratorListUtil(organization);
             }
         }
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
+        else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
+        }
     }
 
     public List<ModeratorInfoDto> removeModerator(Long id, Long moderatorId, Long uid, Set<String> roles) {
@@ -171,8 +171,8 @@ public class OrganizationService {
         // Verificam ca userul care incearca adaugarea moderatorului sa fie
         // administratorul organizatiei respective sau administrator
         if(AccessUtility.isAdmin(roles) || AccessUtility.isOrgAdmin(organization, uid)) {
-            //TODO: check user
-            User user = userRepository.getById(moderatorId);
+            User user = userRepository.findById(moderatorId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User does not exist"));
 
             if(!organization.getModerators().contains(user)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not a moderator of the organization");
@@ -193,9 +193,10 @@ public class OrganizationService {
                 return getModeratorListUtil(organization);
             }
         }
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
+        else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
+        }
     }
-
 
     private List<ModeratorInfoDto> getModeratorListUtil(Organization organization) {
         List<ModeratorInfoDto> organizationModerators = new ArrayList<>();

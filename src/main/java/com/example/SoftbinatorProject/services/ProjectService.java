@@ -33,7 +33,6 @@ public class ProjectService {
     }
 
     public ProjectInfoDto createProject(CreateProjectDto createProjectDto, Long orgId, Long uid, Set<String> roles) {
-        //TODO: organization exists
         Organization organization = organizationRepository.findById(orgId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Organization does not exist!"));
         User user = userRepository.getById(uid);
@@ -89,8 +88,9 @@ public class ProjectService {
 
 
         }
-
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
+        else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this organization!");
+        }
     }
 
 
@@ -100,12 +100,6 @@ public class ProjectService {
 
         if(project.getDecriminatorValue().equals("event")) {
             Event event = (Event) project;
-
-            //TEST REMOVE
-            System.out.println("LISTA BILETE");
-            for(Ticket t: event.getTickets()) {
-                System.out.println(t.getId());
-            }
 
             return EventInfoDto.builder()
                     .type(project.getDecriminatorValue())
@@ -189,7 +183,7 @@ public class ProjectService {
 
             if(project.getDecriminatorValue().equals("event")) {
                 Event event = (Event) project;
-                //TODO: Merge cu el null?
+
                 if(updateProjectDto.getTicketAmount() != null && updateProjectDto.getTicketAmount() >= 0)
                     event.setTicketAmount(updateProjectDto.getTicketAmount());
                 if(updateProjectDto.getTicketPrice() != null && updateProjectDto.getTicketPrice() > 0)

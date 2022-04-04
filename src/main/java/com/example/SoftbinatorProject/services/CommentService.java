@@ -57,7 +57,6 @@ public class CommentService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post does not exist");
         }
         return commentRepository.getCommentDtosByPostId(postId);
-
     }
 
     public CommentDto updateComment(CommentDto commentDto, Long postId, Long commentId, Long uid, Set<String> roles) {
@@ -76,8 +75,9 @@ public class CommentService {
                     .uid(comment.getUser().getId())
                     .build();
         }
-
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this comment!");
+        else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not have access to this comment!");
+        }
     }
 
     public void deleteComment(Long postId, Long commentId, Long uid, Set<String> roles) {

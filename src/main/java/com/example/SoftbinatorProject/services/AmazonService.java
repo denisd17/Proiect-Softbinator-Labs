@@ -39,35 +39,10 @@ public class AmazonService {
 
     @PostConstruct
     private void initializeAmazon() {
-//        AWSCredentials credentials = new BasicAWSCredentials(this.accessKey, this.secretKey);
-//        this.s3client = new AmazonS3Client(credentials);
         BasicAWSCredentials creds = new BasicAWSCredentials(this.accessKey, this.secretKey);
         s3client = AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(creds)).build();
     }
-    public String uploadTest() throws FileNotFoundException, DocumentException {
-        Document document = new Document();
-        PdfWriter.getInstance(document, new FileOutputStream("test.pdf"));
-        document.open();
 
-        document.open();
-        Font font = FontFactory.getFont(FontFactory.COURIER, 16, BaseColor.BLACK);
-        Chunk chunk = new Chunk("Hello World", font);
-
-        document.add(chunk);
-        document.close();
-        File file = new File("test.pdf");
-
-        if(file.exists()) {
-            System.out.println("exista");
-            String fileName = "test1234";
-            String fileUrl = endpointUrl + "/" + bucketName + "/" + fileName;
-            uploadFileTos3bucket("test", fileName, file);
-
-            return fileUrl;
-        }
-
-        return null;
-    }
     public String uploadFile(String folderName, String fileName, File file) {
         String fileUrl = endpointUrl + "/"  + bucketName + "/" + folderName + "/" + fileName;
         uploadFileTos3bucket(folderName, fileName, file);
@@ -85,9 +60,10 @@ public class AmazonService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //ATENTIE LA FILE URL SA AIBE SI FOLDER NAME
+
         return fileUrl;
     }
+
     public void deleteFileFroms3bucket(String folderName, String fileName) {
         s3client.deleteObject(bucketName, folderName + "/" + fileName);
     }
@@ -98,7 +74,7 @@ public class AmazonService {
         s3client.deleteObject(bucketName, folderName + "/" + fileName);
         return fileUrl;
     }
-    //
+
     private File convertMultiPartToFile(MultipartFile file) throws IOException {
         File convFile = new File(file.getOriginalFilename());
         FileOutputStream fos = new FileOutputStream(convFile);
@@ -106,12 +82,7 @@ public class AmazonService {
         fos.close();
         return convFile;
     }
-    //generate unique name to the uploadfile
-    private String generateFileName(MultipartFile multiPart) {
-        return new Date().getTime() + "-" + multiPart.getOriginalFilename().replace(" ", "_");
-    }
 
-    //upload files to s3
     private void uploadFileTos3bucket(String folderName, String fileName, File file) {
         s3client.putObject(new PutObjectRequest(bucketName, folderName + "/" + fileName, file).withCannedAcl(CannedAccessControlList.PublicRead));
     }
